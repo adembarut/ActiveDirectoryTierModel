@@ -38,8 +38,8 @@ Describe 'TierModel Module Manifest' -Tag 'Unit', 'Manifest' {
             $script:Manifest.ModuleVersion | Should -Match '^\d+\.\d+\.\d+$'
         }
         
-        It 'Has current version 2.0.0' {
-            $script:Manifest.ModuleVersion | Should -Be '2.0.0'
+        It 'Has current version 2.1.0' {
+            $script:Manifest.ModuleVersion | Should -Be '2.1.0'
         }
         
         It 'Has valid GUID' {
@@ -127,6 +127,27 @@ Describe 'TierModel Module Manifest' -Tag 'Unit', 'Manifest' {
             $script:DeclaredFunctions | Should -Contain 'Get-TierModelOuAclFd'
             $script:DeclaredFunctions | Should -Contain 'New-TierModelOuAcl'
             $script:DeclaredFunctions | Should -Contain 'Test-TierModelOuAcl'
+        }
+        
+        It 'Contains MSA ACL functions including Fd variant' {
+            $script:DeclaredFunctions | Should -Contain 'Get-TierModelMsaAcl'
+            $script:DeclaredFunctions | Should -Contain 'Get-TierModelMsaAclFd'
+            $script:DeclaredFunctions | Should -Contain 'New-TierModelMsaAcl'
+            $script:DeclaredFunctions | Should -Contain 'Test-TierModelMsaAcl'
+        }
+        
+        It 'Contains gMSA ACL functions including Fd variant' {
+            $script:DeclaredFunctions | Should -Contain 'Get-TierModelGmsaAcl'
+            $script:DeclaredFunctions | Should -Contain 'Get-TierModelGmsaAclFd'
+            $script:DeclaredFunctions | Should -Contain 'New-TierModelGmsaAcl'
+            $script:DeclaredFunctions | Should -Contain 'Test-TierModelGmsaAcl'
+        }
+        
+        It 'Contains dMSA ACL functions including Fd variant' {
+            $script:DeclaredFunctions | Should -Contain 'Get-TierModelDmsaAcl'
+            $script:DeclaredFunctions | Should -Contain 'Get-TierModelDmsaAclFd'
+            $script:DeclaredFunctions | Should -Contain 'New-TierModelDmsaAcl'
+            $script:DeclaredFunctions | Should -Contain 'Test-TierModelDmsaAcl'
         }
         
         It 'Contains GPO functions including Fd variant' {
@@ -280,6 +301,27 @@ Describe 'TierModel Module Manifest' -Tag 'Unit', 'Manifest' {
         
         It 'OU ACL Fd function is accessible' {
             Get-Command -Module TierModel -Name 'Get-TierModelOuAclFd' | Should -Not -BeNullOrEmpty
+        }
+        
+        It 'MSA ACL functions are accessible' {
+            Get-Command -Module TierModel -Name 'Get-TierModelMsaAcl'   | Should -Not -BeNullOrEmpty
+            Get-Command -Module TierModel -Name 'Get-TierModelMsaAclFd' | Should -Not -BeNullOrEmpty
+            Get-Command -Module TierModel -Name 'New-TierModelMsaAcl'   | Should -Not -BeNullOrEmpty
+            Get-Command -Module TierModel -Name 'Test-TierModelMsaAcl'  | Should -Not -BeNullOrEmpty
+        }
+        
+        It 'gMSA ACL functions are accessible' {
+            Get-Command -Module TierModel -Name 'Get-TierModelGmsaAcl'   | Should -Not -BeNullOrEmpty
+            Get-Command -Module TierModel -Name 'Get-TierModelGmsaAclFd' | Should -Not -BeNullOrEmpty
+            Get-Command -Module TierModel -Name 'New-TierModelGmsaAcl'   | Should -Not -BeNullOrEmpty
+            Get-Command -Module TierModel -Name 'Test-TierModelGmsaAcl'  | Should -Not -BeNullOrEmpty
+        }
+        
+        It 'dMSA ACL functions are accessible' {
+            Get-Command -Module TierModel -Name 'Get-TierModelDmsaAcl'   | Should -Not -BeNullOrEmpty
+            Get-Command -Module TierModel -Name 'Get-TierModelDmsaAclFd' | Should -Not -BeNullOrEmpty
+            Get-Command -Module TierModel -Name 'New-TierModelDmsaAcl'   | Should -Not -BeNullOrEmpty
+            Get-Command -Module TierModel -Name 'Test-TierModelDmsaAcl'  | Should -Not -BeNullOrEmpty
         }
         
         It 'GPO Fd function is accessible' {
