@@ -51,7 +51,8 @@ function Test-TierModelPrerequisites {
         
         [switch]$IncludeMsa,
         [switch]$IncludeGmsa,
-        [switch]$IncludeDmsa
+        [switch]$IncludeDmsa,
+        [switch]$IncludeWinLaps
     )
     
     $ErrorActionPreference = 'Stop'
@@ -361,8 +362,8 @@ function Test-TierModelPrerequisites {
             }
         }
         
-        # --- MSA/gMSA/dMSA Prerequisites (only when -Include* switches are specified) ---
-        if ($IncludeMsa -or $IncludeGmsa -or $IncludeDmsa) {
+        # --- MSA/gMSA/dMSA/WinLaps Prerequisites (shared schema/DFL resolution) ---
+        if ($IncludeMsa -or $IncludeGmsa -or $IncludeDmsa -or $IncludeWinLaps) {
             $schemaDN = $null
             $schemaVersion = $null
             $dfl = $null
@@ -501,6 +502,106 @@ function Test-TierModelPrerequisites {
                     $null = $result.Errors.Add("Failed to check KDS Root Key via Invoke-Command on $PreferredDc`: $($_.Exception.Message)")
                 }
             }
+        }
+        
+        # --- Windows LAPS Prerequisites (only when -IncludeWinLaps is specified) ---
+        if ($IncludeWinLaps) {
+            $winLapsSchemaPresent = $false
+            $lapsModulePresent = $false
+
+            # Ensure schema DN and DFL are available
+            if ($null -eq $schemaDN) {
+                try {
+                    $rootDSE = Get-ADRootDSE -Server $PreferredDc -ErrorAction Stop
+                    $schemaDN = $rootDSE.schemaNamingContext
+                } catch {
+                    $result.Valid = $false
+                    $null = $result.Errors.Add("Could not verify the Windows LAPS schema extensions on the domain: $($_.Exception.Message). Confirm connectivity to the domain controller, then re-attempt the Tier Model Windows LAPS deployment.")
+                    $null = $result.Remediation.Add("Follow Microsoft documentation to extend the Windows LAPS schema, then re-run with -IncludeWinLaps.")
+                }
+            }
+            if ($null -eq $dfl) {
+                try {
+                    $adDomain = Get-ADDomain -Server $PreferredDc -ErrorAction Stop
+                    $dfl = $adDomain.DomainMode
+                } catch { }
+            }
+
+            # Gate 1 (HARD STOP): Windows LAPS schema present
+            if ($null -ne $schemaDN) {
+                try {
+                    $lapsAttributes = @('msLAPS-PasswordExpirationTime', 'msLAPS-Password', 'msLAPS-EncryptedPassword', 'msLAPS-EncryptedPasswordHistory', 'msLAPS-EncryptedDSRMPassword', 'msLAPS-EncryptedDSRMPasswordHistory')
+                    $foundAttributes = @()
+                    foreach ($attrName in $lapsAttributes) {
+                        $attrObj = Get-ADObject -Filter "lDAPDisplayName -eq '$attrName'" -SearchBase $schemaDN -Server $PreferredDc -ErrorAction SilentlyContinue
+                        if ($attrObj) { $foundAttributes += $attrName }
+                    }
+
+                    if ($foundAttributes.Count -lt 5) {
+                        $result.Valid = $false
+                        $winLapsSchemaPresent = $false
+                        $null = $result.Errors.Add("The current Domain does not contain the Windows LAPS schema extensions, please follow Microsoft Doc guidance on how to extend the schema, then re-attempt the Tier Model Windows LAPS deployment.")
+                        $null = $result.Remediation.Add("Follow Microsoft documentation to extend the Windows LAPS schema, then re-run with -IncludeWinLaps.")
+                    } else {
+                        $winLapsSchemaPresent = $true
+                    }
+                } catch {
+                    $result.Valid = $false
+                    $winLapsSchemaPresent = $false
+                    $null = $result.Errors.Add("Could not verify the Windows LAPS schema extensions on the domain: $($_.Exception.Message). Confirm connectivity to the domain controller, then re-attempt the Tier Model Windows LAPS deployment.")
+                    $null = $result.Remediation.Add("Follow Microsoft documentation to extend the Windows LAPS schema, then re-run with -IncludeWinLaps.")
+                }
+            }
+
+            # Gate 2: LAPS PowerShell module available
+            if ($winLapsSchemaPresent) {
+                try {
+                    Import-Module LAPS -ErrorAction Stop -Verbose:$false
+                    $lapsModule = Get-Module LAPS -ErrorAction SilentlyContinue
+                    if ($lapsModule) {
+                        $requiredCmds = @('Set-LapsADComputerSelfPermission', 'Set-LapsADReadPasswordPermission', 'Set-LapsADResetPasswordPermission')
+                        $missingCmds = @()
+                        foreach ($cmd in $requiredCmds) {
+                            if (-not (Get-Command $cmd -Module LAPS -ErrorAction SilentlyContinue)) {
+                                $missingCmds += $cmd
+                            }
+                        }
+                        if ($missingCmds.Count -gt 0) {
+                            $result.Valid = $false
+                            $lapsModulePresent = $false
+                            $null = $result.Errors.Add("WINLAPS_MODULE_MISSING: LAPS module loaded but missing required cmdlets: $($missingCmds -join ', ')")
+                            $null = $result.Remediation.Add("Install the Windows LAPS PowerShell module with all required cmdlets (Set-LapsADComputerSelfPermission, Set-LapsADReadPasswordPermission, Set-LapsADResetPasswordPermission).")
+                        } else {
+                            $lapsModulePresent = $true
+                        }
+                    } else {
+                        $result.Valid = $false
+                        $lapsModulePresent = $false
+                        $null = $result.Errors.Add("WINLAPS_MODULE_MISSING: LAPS PowerShell module not available.")
+                        $null = $result.Remediation.Add("Install the Windows LAPS PowerShell module. On Windows Server 2022+, it is included with the OS. On older systems, install it from Microsoft.")
+                    }
+                } catch {
+                    $result.Valid = $false
+                    $lapsModulePresent = $false
+                    $null = $result.Errors.Add("WINLAPS_MODULE_MISSING: Failed to import LAPS module: $($_.Exception.Message)")
+                    $null = $result.Remediation.Add("Install the Windows LAPS PowerShell module. On Windows Server 2022+, it is included with the OS. On older systems, install it from Microsoft.")
+                }
+            }
+
+            # Gate 3: DFL >= 2016 (encryption mandatory)
+            if ($winLapsSchemaPresent -and $lapsModulePresent) {
+                $winLapsDflValues = @('Windows2016Domain', 'Windows2025Domain')
+                if ($null -ne $dfl -and $dfl -notin $winLapsDflValues) {
+                    $result.Valid = $false
+                    $null = $result.Errors.Add("WINLAPS_DFL_INSUFFICIENT: Domain Functional Level must be >= Windows2016Domain for LAPS encryption. Current: $dfl")
+                    $null = $result.Remediation.Add("Raise the domain functional level to at least Windows Server 2016 to support Windows LAPS password encryption.")
+                }
+            }
+
+
+            # Add snapshot fields
+            $result.EnvironmentSnapshot.WinLapsSchemaPresent = $winLapsSchemaPresent
+            $result.EnvironmentSnapshot.LapsModulePresent = $lapsModulePresent
         }
         
         # Convert ArrayLists to regular arrays for consistent output
