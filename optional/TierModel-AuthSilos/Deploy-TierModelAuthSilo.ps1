@@ -1,9 +1,6 @@
 param (
     [Parameter(Mandatory=$true)]
-    [string]$PreferredDC,
-
-    [Parameter(Mandatory=$false)]
-    [string]$ParentOU = "_TierModel"
+    [string]$PreferredDC
 )
 
 <#

@@ -72,11 +72,12 @@ function Resolve-TierModelPlaceholder {
         }
     } else {
         # ParentOU is empty - strip hardcoded 'OU=_TierModel' from path if present
-        $workPath = $workPath -replace '(?i),?\s*OU=_TierModel\b', ''
+        $workPath = $workPath -replace '(?i)(^|,)\s*OU=_TierModel\b', '$1'
+        $workPath = $workPath.Trim(',')
     }
     
     # Clean up trailing commas and attach DomainDN if not present
-    $workPath = $workPath.TrimEnd(',')
+    $workPath = $workPath.Trim(',')
     if ($workPath -notmatch 'DC=') {
         $workPath = "$workPath,$DomainDN"
     }

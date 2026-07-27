@@ -113,10 +113,9 @@ function Get-TierModelUser {
                     # Check if user already exists
                     $existingUser = $null
                     try {
-                        $targetUserDn = "CN=$userName,$resolvedPath"
-                        $existingUser = Get-ADUser -Identity $targetUserDn -Server $DomainController -ErrorAction SilentlyContinue
+                        $existingUser = Get-ADUser -Identity $userSamAccountName -Server $DomainController -ErrorAction SilentlyContinue
                     } catch {
-                        # User doesn't exist at target path, which is fine - we'll create it
+                        # User doesn't exist, which is fine - we'll create it
                     }
                     
                     if (-not $existingUser) {
