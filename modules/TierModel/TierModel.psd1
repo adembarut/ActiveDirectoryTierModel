@@ -75,6 +75,7 @@
         'Test-TierModelPrerequisites',
         'Test-TierModelUser',
         'Update-TierModelGPOConfig',
+        'Set-TierModelGpoComment',
         'Write-TierModelLog'
     )
     PrivateData = @{ 

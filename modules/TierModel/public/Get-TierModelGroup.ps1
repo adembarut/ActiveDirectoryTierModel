@@ -133,6 +133,18 @@ function Get-TierModelGroup {
                         # Group already exists
                         $existingCount++
                         
+                        $groupInfo = if ($group.PSObject.Properties.Name -contains 'info') { $group.info } elseif ($group.PSObject.Properties.Name -contains 'comment') { $group.comment } else { $null }
+                        if ($groupInfo) {
+                            $actions += [PSCustomObject]@{
+                                Action = 'UpdateGroup'
+                                ResourceType = 'Group'
+                                Name = $groupName
+                                Path = $resolvedPath
+                                Data = $group
+                                ExistingGroup = $existingGroup
+                            }
+                        }
+                        
                         Write-TierModelLog -Level Info -Message "GroupPlanExists" -Data @{
                             Name = $groupName
                             SamAccountName = $groupSamAccountName

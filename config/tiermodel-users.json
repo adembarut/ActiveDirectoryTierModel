@@ -11,7 +11,8 @@
       "memberOf": [
         "PAWDomainJoin"
       ],
-      "comment": "Used for automated provision of PAW devices into the Tier Model staging OU for domain join, else leave disabled"
+      "comment": "Used for automated provision of PAW devices into the Tier Model staging OU for domain join, else leave disabled",
+      "info": "=======================================================\r\nTIER MODEL IDENTITY DOCUMENTATION\r\n=======================================================\r\nSCOPE      : Tier 0 (Control Plane)\r\nROLE       : PAW Provisioning Service Account\r\nPRIVILEGES : Delegated rights to join PAW computer\r\n             objects into Tier 0 PAW Staging OU.\r\n             Disabled by default.\r\n-------------------------------------------------------\r\nCHANGE & AUDIT TRACKING:\r\n- Version  : TierModel v2.0 (Microsoft EAM)\r\n- Managed  : AD Security Architecture Team\r\n- History  : Standard TierModel Deployment\r\n======================================================="
     },
     {
       "samAccountName": "svc-t1srvdomainjoin",
@@ -22,7 +23,8 @@
       "memberOf": [
         "Tier1ServerDomainJoin"
       ],
-      "comment": "Used for automated provision of Tier 1 Member Servers computers into the Tier 1 Server Staging OU for domain join, else leave disabled"
+      "comment": "Used for automated provision of Tier 1 Member Servers computers into the Tier 1 Server Staging OU for domain join, else leave disabled",
+      "info": "=======================================================\r\nTIER MODEL IDENTITY DOCUMENTATION\r\n=======================================================\r\nSCOPE      : Tier 1 (Management Plane)\r\nROLE       : Tier 1 Provisioning Service Account\r\nPRIVILEGES : Delegated rights to join Tier 1 Member\r\n             Server objects into Tier 1 Server Staging\r\n             OU. Disabled by default.\r\n-------------------------------------------------------\r\nCHANGE & AUDIT TRACKING:\r\n- Version  : TierModel v2.0 (Microsoft EAM)\r\n- Managed  : Infrastructure Security Team\r\n- History  : Standard TierModel Deployment\r\n======================================================="
     }
   ]
 }

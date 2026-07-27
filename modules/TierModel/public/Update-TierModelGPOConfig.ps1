@@ -118,6 +118,11 @@ function Update-TierModelGPOConfig {
                     if (Test-Path -Path $gptTmplPath) {
                         $fileInfo = Get-Item -Path $gptTmplPath
                         
+                        # Set GPO Comment on GPO Details Tab
+                        if ($gpoData.PSObject.Properties.Name -contains 'gpoComment' -and -not [string]::IsNullOrWhiteSpace($gpoData.gpoComment)) {
+                            $null = Set-TierModelGpoComment -GpoName $gpoName -Comment $gpoData.gpoComment -DomainController $DomainController
+                        }
+                        
                         Write-TierModelLog -Level Info -Message "GPO configuration completed" -Data @{
                             GPOName = $gpoName
                             GptTmplPath = $gptTmplPath

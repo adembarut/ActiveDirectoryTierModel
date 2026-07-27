@@ -22,13 +22,13 @@ if (Test-Path $InternalPath) {
     $internalFiles = Get-ChildItem -Path $InternalPath -Filter '*.ps1' | Where-Object { $_.Name -notlike '*.old' }
     $internalFileCount = if ($internalFiles) { $internalFiles.Count } else { 0 }
     Write-Verbose "Found $internalFileCount active internal files (excluding .old files)"
-    $internalFiles | ForEach-Object {
+    foreach ($file in $internalFiles) {
         try {
-            Write-Verbose "Loading: $($_.FullName)"
-            . $_.FullName
-            Write-Verbose "Successfully loaded: $($_.Name)"
+            Write-Verbose "Loading: $($file.FullName)"
+            . $file.FullName
+            Write-Verbose "Successfully loaded: $($file.Name)"
         } catch {
-            Write-Error "Failed to load $($_.Name): $($_.Exception.Message)"
+            Write-Error "Failed to load $($file.Name): $($_.Exception.Message)"
             throw
         }
     }
@@ -41,13 +41,13 @@ Write-Verbose "Looking for public files in: $PublicPath"
 if (Test-Path $PublicPath) {
     $publicFiles = Get-ChildItem -Path $PublicPath -Filter '*.ps1'
     Write-Verbose "Found $($publicFiles.Count) public files"
-    $publicFiles | ForEach-Object {
+    foreach ($file in $publicFiles) {
         try {
-            Write-Verbose "Loading: $($_.FullName)"
-            . $_.FullName
-            Write-Verbose "Successfully loaded: $($_.Name)"
+            Write-Verbose "Loading: $($file.FullName)"
+            . $file.FullName
+            Write-Verbose "Successfully loaded: $($file.Name)"
         } catch {
-            Write-Error "Failed to load $($_.Name): $($_.Exception.Message)"
+            Write-Error "Failed to load $($file.Name): $($_.Exception.Message)"
             throw
         }
     }

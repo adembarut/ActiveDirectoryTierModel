@@ -133,6 +133,17 @@ function New-TierModelGroup {
                             $newGroupParams['Description'] = $groupDescription
                         }
                         
+                        $groupInfo = if ($groupData.PSObject.Properties.Name -contains 'info') {
+                            $groupData.info
+                        } elseif ($groupData.PSObject.Properties.Name -contains 'comment') {
+                            $groupData.comment
+                        } else {
+                            $null
+                        }
+                        if ($groupInfo) {
+                            $newGroupParams['OtherAttributes'] = @{ 'info' = $groupInfo }
+                        }
+                        
                         $newGroup = New-ADGroup @newGroupParams -PassThru
                         
                         $applied += [PSCustomObject]@{
@@ -187,6 +198,37 @@ function New-TierModelGroup {
                     ExceptionMessage = $_.Exception.Message
                     CorrelationId = $CorrelationId
                 } | Out-Null
+            }
+        }
+        
+        # Process UpdateGroup actions from the plan (e.g. update info/notes attribute)
+        $updateActions = $Plan.Actions | Where-Object { $_.Action -eq 'UpdateGroup' }
+        foreach ($action in $updateActions) {
+            try {
+                $groupData = $action.Data
+                $groupName = $groupData.name
+                $groupInfo = if ($groupData.PSObject.Properties.Name -contains 'info') { 
+                    $groupData.info 
+                } elseif ($groupData.PSObject.Properties.Name -contains 'comment') { 
+                    $groupData.comment 
+                } else { 
+                    $null 
+                }
+                
+                if ($groupInfo) {
+                    if ($PSCmdlet.ShouldProcess("Group: $groupName", "Update info attribute")) {
+                        Write-Host "  ✅ Updating Group info attribute: $groupName" -ForegroundColor Green
+                        Set-ADGroup -Identity $action.ExistingGroup.DistinguishedName -Replace @{ info = $groupInfo } -Server $DomainController
+                        $applied += [PSCustomObject]@{
+                            Name = $groupName
+                            SamAccountName = $action.ExistingGroup.SamAccountName
+                            DistinguishedName = $action.ExistingGroup.DistinguishedName
+                            ActionsPerformed = @('UpdateGroupInfo')
+                        }
+                    }
+                }
+            } catch {
+                Write-TierModelLog -Level Warning -Message "Failed to update info attribute for group ${groupName}: $($_.Exception.Message)"
             }
         }
         

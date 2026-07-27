@@ -71,7 +71,9 @@ function New-TierModelGpo {
                     if ([string]::IsNullOrWhiteSpace($gpoData.gpoComment)) {
                         $newGPO = New-GPO -Name $gpoName -Server $DomainController
                     } else {
-                        $newGPO = New-GPO -Name $gpoName -Server $DomainController -Comment $gpoData.gpoComment
+                        $commentForNewGpo = if ($gpoData.gpoComment.Length -gt 2000) { $gpoData.gpoComment.Substring(0, 2000) } else { $gpoData.gpoComment }
+                        $newGPO = New-GPO -Name $gpoName -Server $DomainController -Comment $commentForNewGpo
+                        $null = Set-TierModelGpoComment -GpoName $gpoName -Comment $gpoData.gpoComment -DomainController $DomainController
                     }
                     
                     # Show Created GPO message immediately after creation

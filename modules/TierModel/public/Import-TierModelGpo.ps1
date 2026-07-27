@@ -71,9 +71,33 @@ function Import-TierModelGpo {
                         $basePath = Split-Path $Plan.Config.ConfigPath -Parent
                         $importPath = Join-Path $basePath $gpoData.importPath
                         if (Test-Path $importPath) {
-                            # Import source: $importPath (removed verbose message)
-                            # Capture Import-GPO output to prevent it from interfering with our return object
-                            $null = Import-GPO -BackupId (Split-Path $importPath -Leaf) -TargetName $gpoName -Path (Split-Path $importPath -Parent) -Server $DomainController
+                            # Execute Import-GPO with retry logic to handle temporary file locks (0x80070091)
+                            $importSuccess = $false
+                            $retryCount = 0
+                            $lastError = $null
+                            
+                            while (-not $importSuccess -and $retryCount -lt 3) {
+                                try {
+                                    $null = Import-GPO -BackupId (Split-Path $importPath -Leaf) -TargetName $gpoName -Path (Split-Path $importPath -Parent) -Server $DomainController -ErrorAction Stop
+                                    $importSuccess = $true
+                                } catch {
+                                    $retryCount++
+                                    $lastError = $_
+                                    if ($retryCount -lt 3) {
+                                        Start-Sleep -Milliseconds 500
+                                    }
+                                }
+                            }
+                            
+                            if (-not $importSuccess) {
+                                throw $lastError
+                            }
+                            
+                            # Ensure GPO Comment is updated in GPMC after import
+                            if ($gpoData.PSObject.Properties.Name -contains 'gpoComment' -and -not [string]::IsNullOrWhiteSpace($gpoData.gpoComment)) {
+                                $targetGpoName = if ($action.PSObject.Properties.Name -contains 'ActualGpoName' -and $action.ActualGpoName) { $action.ActualGpoName } else { $gpoName }
+                                $null = Set-TierModelGpoComment -GpoName $targetGpoName -Comment $gpoData.gpoComment -DomainController $DomainController
+                            }
                             
                             Write-TierModelLog -Level Info -Message "GPO settings imported successfully" -Data @{
                                 GPOName = $gpoName

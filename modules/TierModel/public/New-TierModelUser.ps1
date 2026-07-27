@@ -96,6 +96,17 @@ function New-TierModelUser {
                             $newUserParams['Description'] = $userDescription
                         }
                         
+                        $userInfo = if ($userData.PSObject.Properties.Name -contains 'info') {
+                            $userData.info
+                        } elseif ($userData.PSObject.Properties.Name -contains 'comment') {
+                            $userData.comment
+                        } else {
+                            $null
+                        }
+                        if ($userInfo) {
+                            $newUserParams['OtherAttributes'] = @{ 'info' = $userInfo }
+                        }
+                        
                         # Generate a secure temporary password (user should change on first logon)
                         $passwordLength = 16
                         $chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*'
