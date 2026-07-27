@@ -72,7 +72,8 @@ function Resolve-TierModelPlaceholder {
         }
     } else {
         # ParentOU is empty - strip hardcoded 'OU=_TierModel' from path if present
-        $workPath = $workPath -replace '(?i)(^|,)\s*OU=_TierModel\b', '$1'
+        $workPath = $workPath -replace '(?i),?\s*OU=_TierModel\b,?', ','
+        $workPath = $workPath -replace ',+', ','
         $workPath = $workPath.Trim(',')
     }
     
