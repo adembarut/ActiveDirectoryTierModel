@@ -272,7 +272,22 @@ function Get-TierModelGpoFd {
                     $isBuiltinContainer = ($resolvedOUPath -match '^OU=Domain Controllers,DC=') -or ($resolvedOUPath -match '^CN=Builtin,DC=') -or ($resolvedOUPath -match '^CN=Users,DC=')
                     
                     # Only validate built-in containers and domain root - assume custom OUs will be created
-                    if ($isDomainRoot -or $isBuiltinContainer) {
+                    if ($isDomainRoot) {
+                        try {
+                            Get-ADDomain -Identity $resolvedOUPath -Server $DomainController -ErrorAction Stop | Out-Null
+                        } catch {
+                            $planErrors += @{
+                                Timestamp = Get-Date
+                                Category = 'Validation'
+                                Code = 'DomainRootNotFound'
+                                Message = "Domain Root '$resolvedOUPath' does not exist"
+                                Context = @{
+                                    OUPath = $resolvedOUPath
+                                }
+                            }
+                            $ouExists = $false
+                        }
+                    } elseif ($isBuiltinContainer) {
                         try {
                             Get-ADOrganizationalUnit -Identity $resolvedOUPath -Server $DomainController -ErrorAction Stop | Out-Null
                         } catch {
