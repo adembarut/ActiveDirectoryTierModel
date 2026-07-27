@@ -6,7 +6,8 @@ Modular TierModel deployment using dedicated cmdlets per entity type.
 Performs TierModel component deployment including organizational units, groups, users,
 GPOs, OU ACL delegations, and ADMX configurations. Uses modular cmdlet architecture
 for improved maintainability and testing. Supports planning mode (default) and
-execution mode (with -ConfirmApply).
+execution mode (with -ConfirmApply). Supports deploying OUs under a custom parent OU
+(e.g., -ParentOU "_TierModel") or directly under the Domain Root (when ParentOU is omitted).
 
 .PARAMETER PreferredDc
 The preferred domain controller to use for all Active Directory operations.
@@ -18,23 +19,23 @@ configuration will be performed based on TierModel specification.
 
 .PARAMETER GroupOnly
 Deploy only security groups. When specified, only group creation and
-membership configuration will be performed. (Not yet implemented in v0.2)
+membership configuration will be performed.
 
 .PARAMETER UserOnly
 Deploy only user accounts. When specified, only user account creation
-and configuration will be performed. (Not yet implemented in v0.2)
+and configuration will be performed.
 
 .PARAMETER GposOnly
 Deploy only Group Policy Objects. When specified, only GPO creation,
-configuration, and linking will be performed. (Not yet implemented in v0.2)
+configuration, and linking will be performed.
 
 .PARAMETER OuAclsOnly
 Deploy only OU ACL delegations. When specified, only organizational unit
-access control list delegations will be applied. (Not yet implemented in v0.2)
+access control list delegations will be applied.
 
 .PARAMETER AdmxOnly
 Deploy only ADMX template configurations. When specified, only administrative
-template imports and configurations will be applied. (Not yet implemented in v0.2)
+template imports and configurations will be applied.
 
 .PARAMETER FullDeployment
 Perform comprehensive deployment of all TierModel components in dependency order:
@@ -44,6 +45,24 @@ Provides consolidated reporting at completion.
 .PARAMETER ConfirmApply
 Execute the deployment plan. Without this switch, the script runs in planning
 mode only, showing what changes would be made without applying them.
+
+.PARAMETER IncludeMsa
+Deploy Standalone Managed Service Account (sMSA) ACL delegations as an optional feature.
+
+.PARAMETER IncludeGmsa
+Deploy Group Managed Service Account (gMSA) ACL delegations as an optional feature.
+
+.PARAMETER IncludeDmsa
+Deploy Delegated Managed Service Account (dMSA) ACL delegations as an optional feature.
+Gracefully skips ACL assignment on pre-Server 2025 AD schemas (Schema < 91).
+
+.PARAMETER IncludeWinLaps
+Deploy Windows LAPS ACL delegations and GPO decryptor settings as an optional feature.
+
+.PARAMETER ParentOU
+Optional name of the Parent OU under which all TierModel OUs will be created (e.g., '_TierModel').
+If omitted or empty, OUs will be deployed directly under the Domain Root (matching original TierModel behavior).
+If 'OU=_TierModel' already exists in Active Directory, it is automatically detected.
 
 .PARAMETER Logging
 Enable detailed logging to files. When specified, deployment operations and
@@ -60,16 +79,16 @@ The actual filename will include a timestamp and appropriate extension.
 Used when Logging is enabled or when generating deployment reports.
 
 .EXAMPLE
-.\Deploy-TierModel.ps1 -PreferredDc "DC01.contoso.com" -OuOnly
-Generate deployment plan for organizational units only (planning mode).
+.\Deploy-TierModel.ps1 -PreferredDc "DC01.contoso.com" -FullDeployment -ConfirmApply
+Perform full TierModel deployment directly under the Domain Root (standard original behavior).
 
 .EXAMPLE
-.\Deploy-TierModel.ps1 -PreferredDc "DC01.contoso.com" -OuOnly -ConfirmApply -Logging -LogPath "C:\Logs"
-Deploy organizational units and log all operations to C:\Logs directory.
+.\Deploy-TierModel.ps1 -PreferredDc "DC01.contoso.com" -FullDeployment -ParentOU "_TierModel" -ConfirmApply
+Perform full TierModel deployment placing all top-level OUs under 'OU=_TierModel,DC=contoso,DC=com'.
 
 .EXAMPLE
-.\Deploy-TierModel.ps1 -PreferredDc "DC01.contoso.com" -FullDeployment -ConfirmApply -Logging -OutputFileBase "TierModel-Deploy"
-Perform full TierModel deployment with logging enabled using custom log filename base.
+.\Deploy-TierModel.ps1 -PreferredDc "DC01.contoso.com" -FullDeployment -ConfirmApply -IncludeGmsa -IncludeMsa -IncludeDmsa -IncludeWinLaps
+Perform full deployment including all optional MSA, gMSA, dMSA, and Windows LAPS features.
 
 .NOTES
 Version: 2.0

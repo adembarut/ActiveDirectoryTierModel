@@ -6,6 +6,8 @@ Modular TierModel audit using dedicated cmdlets per entity type.
 Performs drift detection and compliance auditing for TierModel components including 
 organizational units, groups, users, GPOs, OU ACL delegations, and ADMX configurations.
 Uses modular cmdlet architecture for improved maintainability and testing.
+Supports auditing TierModel structure deployed under a custom parent OU (via -ParentOU)
+or directly under the Domain Root (when ParentOU is omitted).
 
 .PARAMETER PreferredDc
 The preferred domain controller to use for all Active Directory operations.
@@ -17,37 +19,47 @@ compliance will be checked against the TierModel specification.
 
 .PARAMETER GroupOnly
 Audit only security groups. When specified, only group membership and 
-configuration compliance will be checked. (Not yet implemented in v0.2)
+configuration compliance will be checked.
 
 .PARAMETER UserOnly
 Audit only user accounts. When specified, only user account configuration 
-and placement compliance will be checked. (Not yet implemented in v0.2)
+and placement compliance will be checked.
 
 .PARAMETER GposOnly
 Audit only Group Policy Objects. When specified, only GPO configuration,
-settings, and linkage compliance will be checked. (Not yet implemented in v0.2)
+settings, and linkage compliance will be checked.
 
 .PARAMETER OuAclsOnly
 Audit only OU ACL delegations. When specified, only organizational unit
-access control list delegations will be checked. (Not yet implemented in v0.2)
+access control list delegations will be checked.
 
 .PARAMETER AdmxOnly
 Audit only ADMX template compliance. When specified, only administrative 
-template imports and configurations will be checked. (Not yet implemented in v0.2)
+template imports and configurations will be checked.
 
 .PARAMETER FullDeployment
 Perform comprehensive audit of all TierModel components in dependency order:
 OUs -> Groups -> Users -> OU ACL Delegations -> GPOs -> ADMX.
 Provides consolidated reporting at completion.
 
+.PARAMETER IncludeMsa
+Audit Standalone Managed Service Account (sMSA) ACL delegations as an optional feature.
+
+.PARAMETER IncludeGmsa
+Audit Group Managed Service Account (gMSA) ACL delegations as an optional feature.
+
+.PARAMETER IncludeDmsa
+Audit Delegated Managed Service Account (dMSA) ACL delegations as an optional feature.
+Gracefully skips dMSA ACL checks on pre-Server 2025 AD schemas (Schema < 91).
+
 .PARAMETER IncludeWinLaps
 Audit Windows LAPS ACL delegations and GPO decryptor settings as an optional feature.
 Can be used standalone (without any scope parameter) or combined with -FullDeployment.
-When active, audits all configured winLapsDelegations for SELF/Read/Reset DACL
-compliance (via Test-TierModelWinLapsAcl) and verifies the ADPasswordEncryptionPrincipal
-registry policy on each non-DC LAPS GPO (via Test-TierModelWinLapsDecryptor).
-Requires Windows LAPS schema extended and LAPS PowerShell module installed.
-A plain -FullDeployment without -IncludeWinLaps does NOT audit LAPS.
+
+.PARAMETER ParentOU
+Optional name of the Parent OU under which TierModel OUs are located (e.g., '_TierModel').
+If omitted or empty, audits OUs directly under the Domain Root. If 'OU=_TierModel' exists in AD,
+it is automatically detected.
 
 .PARAMETER OutputFormat
 Specifies the format for audit report output. Valid options:
@@ -71,25 +83,16 @@ If not provided, files are created in the current directory. Directory will be
 created automatically if it doesn't exist.
 
 .EXAMPLE
-.\Audit-TierModel.ps1 -PreferredDc "DC01.contoso.com" -OuOnly
-Audit only organizational units using DC01 as the preferred domain controller.
+.\Audit-TierModel.ps1 -PreferredDc "DC01.contoso.com" -FullDeployment
+Audit full TierModel deployment directly under the Domain Root (standard original behavior).
 
 .EXAMPLE
-.\Audit-TierModel.ps1 -PreferredDc "DC01.contoso.com" -FullDeployment -OutputFormat Json -OutputFileBase "TierModel-Audit" -LogPath "C:\Reports"
-Perform full TierModel audit and save results as JSON in the C:\Reports directory.
+.\Audit-TierModel.ps1 -PreferredDc "DC01.contoso.com" -FullDeployment -ParentOU "_TierModel"
+Audit full TierModel deployment located under 'OU=_TierModel,DC=contoso,DC=com'.
 
 .EXAMPLE
-.\Audit-TierModel.ps1 -PreferredDc "DC01.contoso.com" -GposOnly -OutputFormat Html -OutputFileBase "GPO-Compliance"
-Audit only GPOs and generate an HTML report in the current directory.
-
-.EXAMPLE
-.\Audit-TierModel.ps1 -PreferredDc "DC01.contoso.com" -IncludeWinLaps
-Standalone audit of Windows LAPS ACL delegations and GPO decryptor settings.
-Expects 0 drift when the tier model with WinLaps has been fully deployed.
-
-.EXAMPLE
-.\Audit-TierModel.ps1 -PreferredDc "DC01.contoso.com" -FullDeployment -IncludeWinLaps
-Full TierModel audit including Windows LAPS ACL delegations and decryptor GPO settings.
+.\Audit-TierModel.ps1 -PreferredDc "DC01.contoso.com" -FullDeployment -IncludeWinLaps -IncludeGmsa -IncludeMsa -IncludeDmsa
+Full TierModel audit including optional MSA, gMSA, dMSA, and Windows LAPS ACL delegations.
 
 .NOTES
 Version: 2.0

@@ -1,12 +1,13 @@
 function Get-TierModelGpo {
     <#
     .SYNOPSIS
-    Analyze TierModel GPO requirements and generate deployment plan.
+    Analyze TierModel GPO requirements and generate deployment plan with ParentOU support.
     
     .DESCRIPTION
     Examines the TierModel GPO configuration and current Active Directory GPO state
     to generate a deployment plan for GPO creation, import, configuration, and linking.
     Validates target OUs exist, checks GPO existence, and determines which GPO operations need to be performed.
+    Supports resolving target OUs under a custom ParentOU or directly under the Domain Root.
     
     .PARAMETER Config
     TierModel GPO configuration object containing GPO definitions.
@@ -20,8 +21,12 @@ function Get-TierModelGpo {
     .PARAMETER Silent
     Suppress action display output during planning. Used to prevent showing planned actions when dependency errors exist.
     
+    .PARAMETER ParentOU
+    Optional parent OU name under which TierModel OUs are located (e.g. '_TierModel').
+    If omitted or empty, GPO links target OUs directly under the Domain Root.
+    
     .EXAMPLE
-    $plan = Get-TierModelGpo -Config $gpoConfig -DomainController "DC01"
+    $plan = Get-TierModelGpo -Config $gpoConfig -DomainController "DC01" -ParentOU "_TierModel"
     
     .EXAMPLE
     $plan = Get-TierModelGpo -Config $gpoConfig -DomainController "DC01" -IncludeDetails

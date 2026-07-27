@@ -1,12 +1,12 @@
 function Get-TierModelOu {
     <#
     .SYNOPSIS
-    Generate ordered OU creation plan based on configuration.
+    Generate ordered OU creation plan based on configuration with ParentOU support.
     
     .DESCRIPTION
     Analyzes TierModel configuration to determine which OUs need to be created,
     applying parent-first ordering and existence checks. Returns structured plan
-    without making any changes to Active Directory.
+    without making any changes to Active Directory. Supports custom ParentOU placement or Domain Root.
     
     .PARAMETER Config
     TierModel configuration object from Get-TierModelConfig.
@@ -17,12 +17,16 @@ function Get-TierModelOu {
     .PARAMETER IncludeDetails
     Include detailed ordering information in output.
     
+    .PARAMETER ParentOU
+    Optional parent OU name under which all TierModel OUs will be located (e.g. '_TierModel').
+    If omitted or empty, OUs will be placed directly under the Domain Root.
+    
     .OUTPUTS
     PSCustomObject with Actions, Summary, Warnings, Errors, and optional Ordering.
     
     .EXAMPLE
     $config = Get-TierModelConfig
-    $plan = Get-TierModelOu -Config $config -DomainController "DC01.contoso.com"
+    $plan = Get-TierModelOu -Config $config -DomainController "DC01.contoso.com" -ParentOU "_TierModel"
     #>
     [CmdletBinding()]
     param(
