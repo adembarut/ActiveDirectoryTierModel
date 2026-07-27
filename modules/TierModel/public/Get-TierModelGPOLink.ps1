@@ -27,7 +27,10 @@ function Get-TierModelGPOLink {
         [object]$Plan,
         
         [Parameter(Mandatory)]
-        [string]$DomainController
+        [string]$DomainController,
+        
+        [Parameter()]
+        [string]$ParentOU
     )
     
     $CorrelationId = [System.Guid]::NewGuid().ToString()

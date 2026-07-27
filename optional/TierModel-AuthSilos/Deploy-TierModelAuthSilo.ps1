@@ -1,6 +1,9 @@
 param (
     [Parameter(Mandatory=$true)]
-    [string]$PreferredDC
+    [string]$PreferredDC,
+
+    [Parameter(Mandatory=$false)]
+    [string]$ParentOU = "_TierModel"
 )
 
 <#
@@ -51,8 +54,8 @@ try {
     $T0PawDeviceSID = (Get-ADGroup -Identity 'Tier0PAWDevices' -Properties ObjectSid -Server $PreferredDC).ObjectSid.Value
     $T0MemberServerSID = (Get-ADGroup -Identity 'Tier0MemberServers' -Properties ObjectSid -Server $PreferredDC).ObjectSid.Value
 
-    #SDDL for the AuthSilo EA = Enterprise Domain Controllers, Tier0PAWDevices, and Tier0MemberServers
-    $T0AllowToAuthenticateFromSDDL = "O:SYG:SYD:(XA;OICI;CR;;;WD;((Member_of {SID(ED)}) || ((Member_of {SID($T0PawDeviceSID)}) && (Member_of {SID($T0MemberServerSID)}))))"
+    #SDDL for the AuthSilo EA = Enterprise Domain Controllers, Tier0PAWDevices, or Tier0MemberServers
+    $T0AllowToAuthenticateFromSDDL = "O:SYG:SYD:(XA;OICI;CR;;;WD;((Member_of {SID(ED)}) || (Member_of {SID($T0PawDeviceSID)}) || (Member_of {SID($T0MemberServerSID)})))"
 
     #Create the Authentication Policies for Tier 0
     New-ADAuthenticationPolicy -Name $T0KerberosAuthenticationPolicy `
@@ -84,8 +87,8 @@ try {
     $T1PawDeviceSID = (Get-ADGroup -Identity 'Tier1PAWDevices' -Properties ObjectSid -Server $PreferredDC).ObjectSid.Value
     $T1MemberServerSID = (Get-ADGroup -Identity 'Tier1MemberServers' -Properties ObjectSid -Server $PreferredDC).ObjectSid.Value
 
-    #SDDL for the AuthSilo EA = Enterprise Domain Controllers, Tier0PAWDevices, and Tier0MemberServers
-    $T1AllowToAuthenticateFromSDDL = "O:SYG:SYD:(XA;OICI;CR;;;WD;((Member_of {SID($T1PawDeviceSID)}) && (Member_of {SID($T1MemberServerSID)})))"
+    #SDDL for the AuthSilo EA = Tier1PAWDevices or Tier1MemberServers
+    $T1AllowToAuthenticateFromSDDL = "O:SYG:SYD:(XA;OICI;CR;;;WD;((Member_of {SID($T1PawDeviceSID)}) || (Member_of {SID($T1MemberServerSID)})))"
 
     #Create the Authentication Policies for Tier 1
     New-ADAuthenticationPolicy -Name $T1KerberosAuthenticationPolicy `
@@ -106,4 +109,40 @@ catch [System.UnauthorizedAccessException]{
     Write-Host $($Error[0].Exception.Message) -ForegroundColor Red
     Write-Host "script aborted " -ForegroundColor Red
     exit
+}
+
+# Create Tier 0 Authentication Policy Silo
+try {
+    if ([bool](Get-ADAuthenticationPolicySilo -Filter "Name -eq '$T0KerberosAuthenticationPolicy'" -Server $PreferredDC -ErrorAction SilentlyContinue)) {
+        Write-Host "  ✅ Authentication Policy Silo '$T0KerberosAuthenticationPolicy' already exists." -ForegroundColor Green
+    } else {
+        New-ADAuthenticationPolicySilo -Name $T0KerberosAuthenticationPolicy `
+            -UserAuthenticationPolicy $T0KerberosAuthenticationPolicy `
+            -ComputerAuthenticationPolicy $T0KerberosAuthenticationPolicy `
+            -ServiceAuthenticationPolicy $T0KerberosAuthenticationPolicy `
+            -Description $T0KerberosAuthenticationPolicyDescription `
+            -ProtectedFromAccidentalDeletion $true `
+            -Server $PreferredDC
+        Write-Host "  ✅ Created Authentication Policy Silo: $T0KerberosAuthenticationPolicy" -ForegroundColor Green
+    }
+} catch {
+    Write-Host "  ⚠️  Could not create Tier 0 Authentication Policy Silo: $($_.Exception.Message)" -ForegroundColor Yellow
+}
+
+# Create Tier 1 Authentication Policy Silo
+try {
+    if ([bool](Get-ADAuthenticationPolicySilo -Filter "Name -eq '$T1KerberosAuthenticationPolicy'" -Server $PreferredDC -ErrorAction SilentlyContinue)) {
+        Write-Host "  ✅ Authentication Policy Silo '$T1KerberosAuthenticationPolicy' already exists." -ForegroundColor Green
+    } else {
+        New-ADAuthenticationPolicySilo -Name $T1KerberosAuthenticationPolicy `
+            -UserAuthenticationPolicy $T1KerberosAuthenticationPolicy `
+            -ComputerAuthenticationPolicy $T1KerberosAuthenticationPolicy `
+            -ServiceAuthenticationPolicy $T1KerberosAuthenticationPolicy `
+            -Description $T1KerberosAuthenticationPolicyDescription `
+            -ProtectedFromAccidentalDeletion $true `
+            -Server $PreferredDC
+        Write-Host "  ✅ Created Authentication Policy Silo: $T1KerberosAuthenticationPolicy" -ForegroundColor Green
+    }
+} catch {
+    Write-Host "  ⚠️  Could not create Tier 1 Authentication Policy Silo: $($_.Exception.Message)" -ForegroundColor Yellow
 }

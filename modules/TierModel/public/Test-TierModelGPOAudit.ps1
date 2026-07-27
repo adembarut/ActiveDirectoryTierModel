@@ -38,7 +38,10 @@ function Test-TierModelGPOAudit {
         [switch]$Silent,
         
         [Parameter()]
-        [string]$OUPath
+        [string]$OUPath,
+        
+        [Parameter()]
+        [string]$ParentOU
     )
     
     $CorrelationId = [System.Guid]::NewGuid().ToString()
@@ -48,6 +51,7 @@ function Test-TierModelGPOAudit {
         DomainController = $DomainController
         OUPath = $OUPath
         CorrelationId = $CorrelationId
+        ParentOU = $ParentOU
     } | Out-Null
     
     try {
@@ -89,8 +93,8 @@ function Test-TierModelGPOAudit {
             $rawOUPath = $ouSection.Name
             $ouGpoData = $ouSection.Value
             
-            # Resolve domain DN placeholder in OU path
-            $resolvedOUPath = Resolve-TierModelPlaceholder -Path $rawOUPath -DomainDN $domainDN
+            # Resolve domain DN placeholder in OU path using Resolve-TierModelPlaceholder
+            $resolvedOUPath = Resolve-TierModelPlaceholder -Path $rawOUPath -DomainDN $domainDN -ParentOU $ParentOU
             
             # Skip if specific OU path is specified and this doesn't match
             if ($OUPath -and $resolvedOUPath -ne $OUPath) {

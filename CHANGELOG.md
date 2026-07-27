@@ -7,7 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.2.0] - 2026-07-17
+## [1.2.1] - 2026-07-26
+
+### Added & Enhanced
+
+#### Dynamic ParentOU & Custom Root OU Support
+- **Dynamic `-ParentOU` Parameter**: Extended `Deploy-TierModel.ps1`, `Audit-TierModel.ps1`, `Deploy-TierModelAuthSilo.ps1`, and all 60 public cmdlets to support custom parent OU names (e.g., `-ParentOU TierModel` or `-ParentOU EnterpriseTiers`).
+- **Path Placeholder Resolution**: Fixed `Resolve-TierModelPlaceholder.ps1` to correctly resolve `{{DOMAIN_DN}}` root paths and insert custom `-ParentOU` dynamically before the domain root DN across all 31 OUs, 26 groups, 101 OU ACLs, and 131 GPO links.
+- **Existing OU GPO Inheritance Enforcement**: Updated `Get-TierModelOu.ps1` and `New-TierModelOu.ps1` to detect and enforce GPO inheritance blocking (`BlockGpoInheritance`) on pre-existing OUs.
+
+#### Independent Optional Feature Orchestration
+- **Independent Feature Evaluation**: Updated `Deploy-TierModel.ps1` to evaluate MSA, gMSA, dMSA, and WinLAPS feature prerequisites independently. Schema limitations on dMSA (requiring Server 2025 schema) no longer block MSA, gMSA, or WinLAPS deployments.
+- **Automated WinLAPS Decryptor Deployment**: Fixed `Get-TierModelWinLapsAclFd.ps1` and `New-TierModelWinLapsAcl.ps1` to resolve GPO display name wildcard patterns and automatically configure authorized password decryptors (`ADPasswordEncryptionPrincipal`) on non-DC LAPS GPOs during deployment, achieving 100% Audit Compliance (376/376 control points).
 
 ### Added
 

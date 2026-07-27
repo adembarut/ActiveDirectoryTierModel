@@ -4,7 +4,7 @@
   "managedServiceAccountType": "dMSA",
   "aclDelegations": [
     {
-      "targetOUPath": "OU=Tier 1 Service Accounts,OU=Tier 1,OU=Tier Model Administration,{{DOMAIN_DN}}",
+      "targetOUPath": "OU=Tier 1 Service Accounts,OU=Tier 1,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
       "identityreference": "Tier1Admins",
       "activedirectoryrights": [
         "CreateChild",
@@ -18,7 +18,7 @@
       "comment": "Grant Tier1Admins create and delete over dMSA objects in Tier 1 Service Accounts"
     },
     {
-      "targetOUPath": "OU=Tier 1 Service Accounts,OU=Tier 1,OU=Tier Model Administration,{{DOMAIN_DN}}",
+      "targetOUPath": "OU=Tier 1 Service Accounts,OU=Tier 1,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
       "identityreference": "Tier1Admins",
       "activedirectoryrights": [
         "GenericAll"
@@ -32,7 +32,7 @@
       "comment": "Grant Tier1Admins GenericAll on descendant dMSA objects in Tier 1 Service Accounts"
     },
     {
-      "targetOUPath": "OU=Tier 2 Service Accounts,OU=Tier 2,OU=Tier Model Administration,{{DOMAIN_DN}}",
+      "targetOUPath": "OU=Tier 2 Service Accounts,OU=Tier 2,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
       "identityreference": "Tier2Admins",
       "activedirectoryrights": [
         "CreateChild",
@@ -46,7 +46,7 @@
       "comment": "Grant Tier2Admins create and delete over dMSA objects in Tier 2 Service Accounts"
     },
     {
-      "targetOUPath": "OU=Tier 2 Service Accounts,OU=Tier 2,OU=Tier Model Administration,{{DOMAIN_DN}}",
+      "targetOUPath": "OU=Tier 2 Service Accounts,OU=Tier 2,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
       "identityreference": "Tier2Admins",
       "activedirectoryrights": [
         "GenericAll"

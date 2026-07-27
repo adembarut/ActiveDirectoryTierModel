@@ -38,7 +38,10 @@ function Get-TierModelWinLapsAcl {
         [Parameter(Mandatory)]
         [string]$DomainController,
 
-        [switch]$IncludeDetails
+        [switch]$IncludeDetails,
+
+        [Parameter()]
+        [string]$ParentOU
     )
 
     $CorrelationId = [System.Guid]::NewGuid().ToString()
@@ -171,7 +174,7 @@ function Get-TierModelWinLapsAcl {
 
         # Validate target OUs
         $uniqueOUs = $delegations | ForEach-Object {
-            Resolve-TierModelPlaceholder -Path $_.ouDn -DomainDN $domainDN
+            Resolve-TierModelPlaceholder -Path $_.ouDn -DomainDN $domainDN -ParentOU $ParentOU
         } | Select-Object -Unique
 
         foreach ($ouPath in $uniqueOUs) {
@@ -267,7 +270,7 @@ function Get-TierModelWinLapsAcl {
 
         # Gate 4b: DC exclusion check
         foreach ($delegation in $delegations) {
-            $resolvedOuDn = Resolve-TierModelPlaceholder -Path $delegation.ouDn -DomainDN $domainDN
+            $resolvedOuDn = Resolve-TierModelPlaceholder -Path $delegation.ouDn -DomainDN $domainDN -ParentOU $ParentOU
             $isDcOu = if ($delegation.PSObject.Properties['isDomainControllerOu']) { $delegation.isDomainControllerOu } else { $false }
             if (-not $isDcOu) {
                 try {
@@ -313,7 +316,7 @@ function Get-TierModelWinLapsAcl {
         # For each delegation, detect existing state and plan 3 actions (Self + Read + Reset)
         $existingCount = 0
         foreach ($delegation in $delegations) {
-            $resolvedOuDn = Resolve-TierModelPlaceholder -Path $delegation.ouDn -DomainDN $domainDN
+            $resolvedOuDn = Resolve-TierModelPlaceholder -Path $delegation.ouDn -DomainDN $domainDN -ParentOU $ParentOU
             $ouName = if ($resolvedOuDn -match '^OU=([^,]+)') { $matches[1] } else { $resolvedOuDn }
 
             # Normalize readGroup/resetGroup to arrays and resolve to NetBIOS\sam
@@ -332,7 +335,6 @@ function Get-TierModelWinLapsAcl {
                 $ouAcl = Get-Acl -Path "AD:$resolvedOuDn" -ErrorAction Stop
                 $selfAces = @($ouAcl.Access | Where-Object {
                     $_.IdentityReference.Value -eq 'NT AUTHORITY\SELF' -and
-                    -not $_.IsInherited -and
                     ($lapsSchemaGUIDs.Count -eq 0 -or $_.ObjectType -in $lapsSchemaGUIDs)
                 })
                 if ($selfAces.Count -ge 1) { $selfExists = $true }

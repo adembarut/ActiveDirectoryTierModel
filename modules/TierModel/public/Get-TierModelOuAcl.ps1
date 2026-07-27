@@ -34,7 +34,10 @@ function Get-TierModelOuAcl {
         [Parameter(Mandatory)]
         [string]$DomainController,
         
-        [switch]$IncludeDetails
+        [switch]$IncludeDetails,
+        
+        [Parameter()]
+        [string]$ParentOU
     )
     
     $CorrelationId = [System.Guid]::NewGuid().ToString()
@@ -43,6 +46,7 @@ function Get-TierModelOuAcl {
     Write-TierModelLog -Level Info -Message "OuAclPlanningStart" -Data @{
         DomainController = $DomainController
         CorrelationId = $CorrelationId
+        ParentOU = $ParentOU
     } | Out-Null
     
     try {
@@ -95,7 +99,7 @@ function Get-TierModelOuAcl {
         foreach ($acl in $Config.aclDelegations) {
             try {
                 # Replace placeholders in target OU path
-                $targetOUPath = Resolve-TierModelPlaceholder -Path $acl.targetOUPath -DomainDN $domainDN
+                $targetOUPath = Resolve-TierModelPlaceholder -Path $acl.targetOUPath -DomainDN $domainDN -ParentOU $ParentOU
                 
                 # Resolve GUID mapping for object type (convert friendly names to GUIDs)
                 $resolvedObjectType = if ($Config.PSObject.Properties.Name -contains 'guidMappings' -and $Config.guidMappings -and -not [string]::IsNullOrEmpty($acl.objecttype)) {

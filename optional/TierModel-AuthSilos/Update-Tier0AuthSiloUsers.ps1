@@ -1,10 +1,13 @@
 [cmdletbinding(SupportsShouldProcess=$true)]
 param (
     [Parameter(Mandatory=$false)]
-	[string]$TieredUsersOU = "OU=Tier 0 Accounts,OU=Tier 0,OU=Tier Model Administration",
+    [string]$ParentOU = "_TierModel",
+
+    [Parameter(Mandatory=$false)]
+	[string]$TieredUsersOU = "OU=Tier 0 Accounts,OU=Tier 0,OU=Tier Model Administration,OU=$ParentOU",
     
     [Parameter(Mandatory=$false)]
-    [string]$TieredServiceAccountsOU = "OU=Tier 0 Service Accounts,OU=Tier 0,OU=Tier Model Administration",
+    [string]$TieredServiceAccountsOU = "OU=Tier 0 Service Accounts,OU=Tier 0,OU=Tier Model Administration,OU=$ParentOU",
 	   
 	[Parameter(Mandatory=$false)]
 	[string]$KerberosPolicyName = "*- Tier 0 Authentication Silo",

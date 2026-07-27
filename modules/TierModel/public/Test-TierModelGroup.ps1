@@ -34,7 +34,10 @@ function Test-TierModelGroup {
         
         [switch]$IncludeResolvedPaths,
         
-        [switch]$Silent
+        [switch]$Silent,
+        
+        [Parameter()]
+        [string]$ParentOU
     )
     
     $CorrelationId = $script:CorrelationId
@@ -42,6 +45,7 @@ function Test-TierModelGroup {
         CorrelationId = $CorrelationId
         DomainController = $DomainController
         IncludeResolvedPaths = $IncludeResolvedPaths.IsPresent
+        ParentOU = $ParentOU
     } | Out-Null
     
     $driftFindings = @()
@@ -69,7 +73,7 @@ function Test-TierModelGroup {
                 
                 try {
                     # Replace placeholders in group path
-                    $resolvedPath = Resolve-TierModelPlaceholder -Path $group.path -DomainDN $domainDN
+                    $resolvedPath = Resolve-TierModelPlaceholder -Path $group.path -DomainDN $domainDN -ParentOU $ParentOU
                     $groupName = $group.name
                     $expectedSamAccountName = $group.samaccountname
                     

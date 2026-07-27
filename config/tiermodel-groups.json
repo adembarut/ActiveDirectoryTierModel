@@ -8,7 +8,7 @@
       "description": "Members of this group are delegated rights to join machines to the domain in the Tier Model PAW Staging OU",
       "groupscope": "Global",
       "groupcategory": "Security",
-      "path": "OU=Tier 0 Groups,OU=Tier 0,OU=Tier Model Administration,{{DOMAIN_DN}}",
+      "path": "OU=Tier 0 Groups,OU=Tier 0,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
       "comment": "Group to allow Domain Join of PAWs to the PAW Staging OU"
     },
     {
@@ -17,7 +17,7 @@
       "description": "Members of this group administer Tier 0, 1, and 2 resources",
       "groupscope": "Global",
       "groupcategory": "Security",
-      "path": "OU=Tier 0 Groups,OU=Tier 0,OU=Tier Model Administration,{{DOMAIN_DN}}",
+      "path": "OU=Tier 0 Groups,OU=Tier 0,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
       "comment": "Group to allow management of the Tier Model Administration OU without requiring Domain Admin rights"
     },
     {
@@ -26,7 +26,7 @@
       "description": "Members of this group required to participate in Tier 0 AuthSilo Policies and IPSec Require RDP and WinRM between Tier 0 PAW Devices to Domain Controllers and Tier 0 Member Servers.",
       "groupscope": "Universal",
       "groupcategory": "Security",
-      "path": "OU=Tier 0 Groups,OU=Tier 0,OU=Tier Model Administration,{{DOMAIN_DN}}",
+      "path": "OU=Tier 0 Groups,OU=Tier 0,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
       "comment": "Group used to establish AuthSilo and IPSec policies for Tier 0 Member Servers, Domain Controllers, and Tier 0 PAW Devices"
     },
     {
@@ -35,7 +35,7 @@
       "description": "Members of this group are delegated rights to log on to Tier 0 PAWs",
       "groupscope": "Global",
       "groupcategory": "Security",
-      "path": "OU=Tier 0 Groups,OU=Tier 0,OU=Tier Model Administration,{{DOMAIN_DN}}",
+      "path": "OU=Tier 0 Groups,OU=Tier 0,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
       "comment": "Group provides non-elevated logon rights to Tier 0 PAWs"
     },
     {
@@ -44,7 +44,7 @@
       "description": "Members of this group required to participate in Tier 0 AuthSilo Policies and IPSec Require RDP and WinRM between Tier 0 PAW Devices to Domain Controllers and Tier 0 Member Servers.",
       "groupscope": "Universal",
       "groupcategory": "Security",
-      "path": "OU=Tier 0 Groups,OU=Tier 0,OU=Tier Model Administration,{{DOMAIN_DN}}",
+      "path": "OU=Tier 0 Groups,OU=Tier 0,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
       "comment": "Group used to establish AuthSilo and IPSec policies for Tier 0 Member Servers, Domain Controllers, and Tier 0 PAW Devices"
     },
     {
@@ -53,7 +53,7 @@
       "description": "Members of this group are members of the local Administrators group on all Tier 0 Member Servers",
       "groupscope": "Global",
       "groupcategory": "Security",
-      "path": "OU=Tier 0 Groups,OU=Tier 0,OU=Tier Model Administration,{{DOMAIN_DN}}",
+      "path": "OU=Tier 0 Groups,OU=Tier 0,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
       "comment": "Group used to allow Local Administrator rights on Tier 0 Member Servers, but not Domain Controllers"
     },
     {
@@ -62,7 +62,7 @@
       "description": "Members of this group are service accounts within Tier 0 that should be denied outside Tier 0.",
       "groupscope": "Global",
       "groupcategory": "Security",
-      "path": "OU=Tier 0 Groups,OU=Tier 0,OU=Tier Model Administration,{{DOMAIN_DN}}",
+      "path": "OU=Tier 0 Groups,OU=Tier 0,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
       "comment": "Group should contain all Tier 0 service accounts to facilitate GPO User Rights Assignment and IPSec rules"
     },
     {
@@ -71,7 +71,7 @@
       "description": "Members of this group are only allowed VPN connectivity from a Tier 0 PAW device.",
       "groupscope": "Global",
       "groupcategory": "Security",
-      "path": "OU=Tier 0 Groups,OU=Tier 0,OU=Tier Model Administration,{{DOMAIN_DN}}",
+      "path": "OU=Tier 0 Groups,OU=Tier 0,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
       "comment": "Group is only required if VPN access is allowed to Tier 0 VPN User Account from a Tier 0 PAW device"
     },
     {
@@ -80,7 +80,7 @@
       "description": "Members of this group can administer Tier 1 objects",
       "groupscope": "Global",
       "groupcategory": "Security",
-      "path": "OU=Tier 1 Groups,OU=Tier 1,OU=Tier Model Administration,{{DOMAIN_DN}}",
+      "path": "OU=Tier 1 Groups,OU=Tier 1,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
       "comment": "Group to allow management of the Tier Model Administration > Tier 1 Child OU's"
     },
     {
@@ -89,7 +89,7 @@
       "description": "Members of this group required to participate in Tier 1 AuthSilo Policies IPSec Require RDP and WinRM between Tier 1 PAW Devices to Tier 1 Member Servers.",
       "groupscope": "Universal",
       "groupcategory": "Security",
-      "path": "OU=Tier 1 Groups,OU=Tier 1,OU=Tier Model Administration,{{DOMAIN_DN}}",
+      "path": "OU=Tier 1 Groups,OU=Tier 1,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
       "comment": "Group used to establish AuthSilo and IPSec policies for Tier 1 Member Servers, Domain Controllers, and Tier 1 PAW Devices"
     },
     {
@@ -98,7 +98,7 @@
       "description": "Members of this group can log on to Tier 1 PAWs",
       "groupscope": "Global",
       "groupcategory": "Security",
-      "path": "OU=Tier 1 Groups,OU=Tier 1,OU=Tier Model Administration,{{DOMAIN_DN}}",
+      "path": "OU=Tier 1 Groups,OU=Tier 1,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
       "comment": "Group provides non-elevated logon rights to Tier 1 PAWs"
     },
     {
@@ -107,7 +107,7 @@
       "description": "Members of this group required to participate in Tier 1 AuthSilo Policies IPSec Require RDP and WinRM between Tier 1 PAW Devices to Tier 1 Member Servers.",
       "groupscope": "Universal",
       "groupcategory": "Security",
-      "path": "OU=Tier 1 Groups,OU=Tier 1,OU=Tier Model Administration,{{DOMAIN_DN}}",
+      "path": "OU=Tier 1 Groups,OU=Tier 1,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
       "comment": "Group used to establish AuthSilo and IPSec policies for Tier 1 Member Servers and Tier 1 PAW Devices"
     },
     {
@@ -116,7 +116,7 @@
       "description": "Members of this group are delegated rights to join machines to the domain in the Tier Model Tier 1 Servers Staging OU.",
       "groupscope": "Global",
       "groupcategory": "Security",
-      "path": "OU=Tier 1 Groups,OU=Tier 1,OU=Tier Model Administration,{{DOMAIN_DN}}",
+      "path": "OU=Tier 1 Groups,OU=Tier 1,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
       "comment": "Group to allow Domain Join of Tier 1 member servers to the Tier 1 Server Staging OU"
     },
     {
@@ -125,7 +125,7 @@
       "description": "Members of this group are administrators of Tier 1 Servers",
       "groupscope": "Global",
       "groupcategory": "Security",
-      "path": "OU=Tier 1 Groups,OU=Tier 1,OU=Tier Model Administration,{{DOMAIN_DN}}",
+      "path": "OU=Tier 1 Groups,OU=Tier 1,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
       "comment": "Group to allow management of computer objects in the Tier 1 Member Server OU"
     },
     {
@@ -134,7 +134,7 @@
       "description": "Members of this group are service accounts within Tier 1 that should be denied outside Tier 1.",
       "groupscope": "Global",
       "groupcategory": "Security",
-      "path": "OU=Tier 1 Groups,OU=Tier 1,OU=Tier Model Administration,{{DOMAIN_DN}}",
+      "path": "OU=Tier 1 Groups,OU=Tier 1,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
       "comment": "Group should contain all Tier 1 service accounts to facilitate GPO User Rights Assignment and IPSec rules"
     },
     {
@@ -143,7 +143,7 @@
       "description": "Members of this group are only allowed VPN connectivity from a Tier 1 PAW device.",
       "groupscope": "Global",
       "groupcategory": "Security",
-      "path": "OU=Tier 1 Groups,OU=Tier 1,OU=Tier Model Administration,{{DOMAIN_DN}}",
+      "path": "OU=Tier 1 Groups,OU=Tier 1,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
       "comment": "Group is only required if VPN access is allowed to Tier 1 VPN User Account from a Tier 1 PAW device"
     },
     {
@@ -152,7 +152,7 @@
       "description": "Members of this group can create, modify and delete End-User user objects in the Tier 2 End-User Accounts OU.",
       "groupscope": "Global",
       "groupcategory": "Security",
-      "path": "OU=Tier 2 Groups,OU=Tier 2,OU=Tier Model Administration,{{DOMAIN_DN}}",
+      "path": "OU=Tier 2 Groups,OU=Tier 2,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
       "comment": "Group has full control of user objects in the Tier 2 End-User Accounts OU, but not manage passwords for end-user accounts."
     },
     {
@@ -161,7 +161,7 @@
       "description": "Members of this group can administer Tier 2 Objects",
       "groupscope": "Global",
       "groupcategory": "Security",
-      "path": "OU=Tier 2 Groups,OU=Tier 2,OU=Tier Model Administration,{{DOMAIN_DN}}",
+      "path": "OU=Tier 2 Groups,OU=Tier 2,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
       "comment": "Group to allow management of the Tier Model Administration > Tier 2 Child OU's"
     },
     {
@@ -170,7 +170,7 @@
       "description": "Members of this group can log on to quarantine devices. This group must not be a member of Tier 2 Operators",
       "groupscope": "Global",
       "groupcategory": "Security",
-      "path": "OU=Tier 2 Groups,OU=Tier 2,OU=Tier Model Administration,{{DOMAIN_DN}}",
+      "path": "OU=Tier 2 Groups,OU=Tier 2,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
       "comment": "Group allows logging into quarantined devices only under the Tier Model Computer Quarantine OU"
     },
     {
@@ -179,7 +179,7 @@
       "description": "Members of this group can create, modify and delete End-User computer objects in the Tier 2 End-User device OU.",
       "groupscope": "Global",
       "groupcategory": "Security",
-      "path": "OU=Tier 2 Groups,OU=Tier 2,OU=Tier Model Administration,{{DOMAIN_DN}}",
+      "path": "OU=Tier 2 Groups,OU=Tier 2,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
       "comment": "Group has full control over computer objects in the Tier 2 End-User Devices OU."
     },
     {
@@ -188,7 +188,7 @@
       "description": "Members of this group can create, modify and delete Tier 2 Groups in the Tier 2 End-User Groups OU.",
       "groupscope": "Global",
       "groupcategory": "Security",
-      "path": "OU=Tier 2 Groups,OU=Tier 2,OU=Tier Model Administration,{{DOMAIN_DN}}",
+      "path": "OU=Tier 2 Groups,OU=Tier 2,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
       "comment": "Group has full control over group objects in the Tier 2 End-User Groups OU."
     },
     {
@@ -197,7 +197,7 @@
       "description": "Members of this group are Help Desk Operators for Tier 2 and can reset passwords and unlock accounts for End-User accounts in Tier 2.",
       "groupscope": "Global",
       "groupcategory": "Security",
-      "path": "OU=Tier 2 Groups,OU=Tier 2,OU=Tier Model Administration,{{DOMAIN_DN}}",
+      "path": "OU=Tier 2 Groups,OU=Tier 2,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
       "comment": "Group has full control over user objects in the Tier 2 End-User Accounts OU, including password resets and account unlocks."
     },
         {
@@ -206,7 +206,7 @@
       "description": "Members of this group can log on to Tier Model End-User devices to perform local administrative tasks. This group must not be a member of Tier 2 Operators.",
       "groupscope": "Global",
       "groupcategory": "Security",
-      "path": "OU=Tier 2 Groups,OU=Tier 2,OU=Tier Model Administration,{{DOMAIN_DN}}",
+      "path": "OU=Tier 2 Groups,OU=Tier 2,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
       "comment": "Group provides local administrator rights on Tier 2 End-User Devices, but does not allow logon to Tier 2 PAWs or managing Active Directory objects in the Tier 2 OU's."
     },
     {
@@ -215,7 +215,7 @@
       "description": "Members of this group can log on to Tier 2 PAWs",
       "groupscope": "Global",
       "groupcategory": "Security",
-      "path": "OU=Tier 2 Groups,OU=Tier 2,OU=Tier Model Administration,{{DOMAIN_DN}}",
+      "path": "OU=Tier 2 Groups,OU=Tier 2,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
       "comment": "Group provides non-elevated logon rights to Tier 2 PAWs"
     },
     {
@@ -224,7 +224,7 @@
       "description": "Members of this group are service accounts within Tier 2 that should be denied outside Tier 2.",
       "groupscope": "Global",
       "groupcategory": "Security",
-      "path": "OU=Tier 2 Groups,OU=Tier 2,OU=Tier Model Administration,{{DOMAIN_DN}}",
+      "path": "OU=Tier 2 Groups,OU=Tier 2,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
       "comment": "Group has restricted access to Tier 2 resources only."
     },
     {
@@ -233,7 +233,7 @@
       "description": "Members of this group are only allowed VPN connectivity from a Tier 2 PAW device.",
       "groupscope": "Global",
       "groupcategory": "Security",
-      "path": "OU=Tier 2 Groups,OU=Tier 2,OU=Tier Model Administration,{{DOMAIN_DN}}",
+      "path": "OU=Tier 2 Groups,OU=Tier 2,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
       "comment": "Group is only required if VPN access is allowed to Tier 1 VPN User Account from a Tier 1 PAW device"
     }
   ]

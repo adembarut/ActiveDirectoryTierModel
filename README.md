@@ -76,10 +76,10 @@ To get started with TierModel, please refer to our comprehensive documentation:
 ```
 
 ### Deployment Scripts
-| Script | Purpose | Optional Features |
+| Script | Purpose | Optional Features & Parameters |
 |--------|---------|-------------------|
-| `Deploy-TierModel.ps1` | 🚀 Deploy with scoped execution | `-IncludeMsa`, `-IncludeGmsa`, `-IncludeDmsa` (Managed Service Account ACL delegation), `-IncludeWinLaps` (Windows LAPS ACL delegation + GPO decryptor) |
-| `Audit-TierModel.ps1` | 📊 Audit and compliance checking | `-IncludeMsa`, `-IncludeGmsa`, `-IncludeDmsa` (Managed Service Account ACL audit), `-IncludeWinLaps` (Windows LAPS ACL + decryptor audit) |
+| `Deploy-TierModel.ps1` | 🚀 Deploy with scoped execution | `-ParentOU <Name>` (custom root OU, default `_TierModel`), `-IncludeMsa`, `-IncludeGmsa`, `-IncludeDmsa` (Managed Service Account ACL delegation), `-IncludeWinLaps` (Windows LAPS ACL delegation + GPO decryptor) |
+| `Audit-TierModel.ps1` | 📊 Audit and compliance checking | `-ParentOU <Name>` (custom root OU, default `_TierModel`), `-IncludeMsa`, `-IncludeGmsa`, `-IncludeDmsa` (Managed Service Account ACL audit), `-IncludeWinLaps` (Windows LAPS ACL + decryptor audit) |
 
 ## 🤝 Contributing
 

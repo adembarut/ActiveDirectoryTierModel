@@ -35,7 +35,10 @@ function Test-TierModelUser {
         [switch]$Silent,
         
         [Parameter()]
-        [switch]$IncludeResolvedPaths
+        [switch]$IncludeResolvedPaths,
+        
+        [Parameter()]
+        [string]$ParentOU
     )
     
     $CorrelationId = [System.Guid]::NewGuid().ToString()
@@ -44,6 +47,7 @@ function Test-TierModelUser {
         DomainController = $DomainController
         IncludeResolvedPaths = $IncludeResolvedPaths.IsPresent
         CorrelationId = $CorrelationId
+        ParentOU = $ParentOU
     } | Out-Null
     
     try {
@@ -71,7 +75,7 @@ function Test-TierModelUser {
                 
                 try {
                     # Replace placeholders in user OU path
-                    $resolvedPath = Resolve-TierModelPlaceholder -Path $user.ouPath -DomainDN $domainDN
+                    $resolvedPath = Resolve-TierModelPlaceholder -Path $user.ouPath -DomainDN $domainDN -ParentOU $ParentOU
                     $userName = $user.displayName
                     $expectedSamAccountName = $user.samAccountName
                     

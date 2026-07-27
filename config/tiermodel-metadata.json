@@ -44,7 +44,7 @@
     },
     "gpoLinkTargets": {
       "domainRoot": {
-        "token": "{{DOMAIN_DN}}",
+        "token": "OU=_TierModel,{{DOMAIN_DN}}",
         "resolutionMethod": "getAdDomain",
         "property": "DistinguishedName",
         "comment": "Resolves to current domain DN for domain-level GPO links"

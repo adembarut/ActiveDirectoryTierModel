@@ -27,9 +27,12 @@ function Resolve-TierModelOuPath {
         [string]$OuPath,
         
         [Parameter(Mandatory)]
-        [string]$DomainDN
+        [string]$DomainDN,
+        
+        [Parameter()]
+        [string]$ParentOU
     )
     
     # Use shared placeholder resolution logic
-    return Resolve-TierModelPlaceholder -Path $OuPath -DomainDN $DomainDN
+    return Resolve-TierModelPlaceholder -Path $OuPath -DomainDN $DomainDN -ParentOU $ParentOU
 }

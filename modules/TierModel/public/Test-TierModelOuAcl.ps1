@@ -41,7 +41,10 @@ function Test-TierModelOuAcl {
         [Parameter(Mandatory)]
         [string]$DomainController,
         
-        [switch]$Silent
+        [switch]$Silent,
+        
+        [Parameter()]
+        [string]$ParentOU
     )
     
     $CorrelationId = [System.Guid]::NewGuid().ToString()
@@ -51,6 +54,7 @@ function Test-TierModelOuAcl {
         DomainController = $DomainController
         Silent = $Silent.IsPresent
         CorrelationId = $CorrelationId
+        ParentOU = $ParentOU
     } | Out-Null
     
     try {
@@ -95,7 +99,7 @@ function Test-TierModelOuAcl {
                 
                 try {
                     # Replace placeholders in target OU path
-                    $targetOUPath = Resolve-TierModelPlaceholder -Path $acl.targetOUPath -DomainDN $domainDN
+                    $targetOUPath = Resolve-TierModelPlaceholder -Path $acl.targetOUPath -DomainDN $domainDN -ParentOU $ParentOU
                     $identityReference = $acl.identityreference
                     
                     Write-Host "Checking ACL Delegation: $identityReference → $targetOUPath" -ForegroundColor Cyan

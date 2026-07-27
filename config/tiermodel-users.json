@@ -5,7 +5,7 @@
     {
       "samAccountName": "svc-pawdomainjoin",
       "displayName": "svc-pawdomainjoin",
-      "ouPath": "OU=Tier 0 Service Accounts,OU=Tier 0,OU=Tier Model Administration,{{DOMAIN_DN}}",
+      "ouPath": "OU=Tier 0 Service Accounts,OU=Tier 0,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
       "description": "This account has the rights to domain join to the PAW Staging OU",
       "enabled": false,
       "memberOf": [
@@ -16,7 +16,7 @@
     {
       "samAccountName": "svc-t1srvdomainjoin",
       "displayName": "svc-t1srvdomainjoin",
-      "ouPath": "OU=Tier 1 Service Accounts,OU=Tier 1,OU=Tier Model Administration,{{DOMAIN_DN}}",
+      "ouPath": "OU=Tier 1 Service Accounts,OU=Tier 1,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
       "description": "This account has the rights to domain join to the Tier Model Tier 1 Servers Staging OU.",
       "enabled": false,
       "memberOf": [

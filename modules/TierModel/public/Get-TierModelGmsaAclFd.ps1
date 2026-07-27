@@ -19,7 +19,10 @@ function Get-TierModelGmsaAclFd {
         
         [switch]$IncludeDetails,
         
-        [switch]$Silent
+        [switch]$Silent,
+        
+        [Parameter()]
+        [string]$ParentOU
     )
     
     $CorrelationId = if (Get-Variable -Name 'script:CorrelationId' -ErrorAction SilentlyContinue) { $script:CorrelationId } else { [System.Guid]::NewGuid().ToString() }
@@ -28,6 +31,7 @@ function Get-TierModelGmsaAclFd {
     Write-TierModelLog -Level Info -Message "GmsaAclFdPlanningStart" -Data @{
         DomainController = $DomainController
         CorrelationId = $CorrelationId
+        ParentOU = $ParentOU
     } | Out-Null
     
     try {
@@ -104,7 +108,7 @@ function Get-TierModelGmsaAclFd {
         
         foreach ($acl in $delegations) {
             try {
-                $targetOUPath = Resolve-TierModelPlaceholder -Path $acl.targetOUPath -DomainDN $domainDN
+                $targetOUPath = Resolve-TierModelPlaceholder -Path $acl.targetOUPath -DomainDN $domainDN -ParentOU $ParentOU
                 $resolvedObjectType = & $resolveAclGuid $acl.objecttype
                 $identityReference = $acl.identityreference
                 $objectTypeGuid = if ([string]::IsNullOrEmpty($resolvedObjectType)) { [Guid]::Empty } else { [Guid]$resolvedObjectType }

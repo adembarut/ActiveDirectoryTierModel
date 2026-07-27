@@ -35,7 +35,10 @@ function Get-TierModelGroupFd {
         [Parameter(Mandatory)]
         [string]$DomainController,
         
-        [switch]$IncludeDetails
+        [switch]$IncludeDetails,
+        
+        [Parameter()]
+        [string]$ParentOU
     )
     
     $CorrelationId = if (Get-Variable -Name 'script:CorrelationId' -ErrorAction SilentlyContinue) { $script:CorrelationId } else { [System.Guid]::NewGuid().ToString() }
@@ -43,6 +46,7 @@ function Get-TierModelGroupFd {
         CorrelationId = $CorrelationId
         DomainController = $DomainController
         IncludeDetails = $IncludeDetails.IsPresent
+        ParentOU = $ParentOU
     } | Out-Null
     
     $actions = @()
@@ -68,7 +72,7 @@ function Get-TierModelGroupFd {
             foreach ($group in $Config.groups) {
                 try {
                     # Replace placeholders in group path
-                    $resolvedPath = Resolve-TierModelPlaceholder -Path $group.path -DomainDN $domainDN
+                    $resolvedPath = Resolve-TierModelPlaceholder -Path $group.path -DomainDN $domainDN -ParentOU $ParentOU
                     $groupName = $group.name
                     $groupSamAccountName = $group.samaccountname
                     
@@ -83,9 +87,10 @@ function Get-TierModelGroupFd {
                     # Only check if group already exists in AD
                     $existingGroup = $null
                     try {
-                        $existingGroup = Get-ADGroup -Identity $groupSamAccountName -Server $DomainController -ErrorAction SilentlyContinue
+                        $targetGroupDn = "CN=$groupName,$resolvedPath"
+                        $existingGroup = Get-ADGroup -Identity $targetGroupDn -Server $DomainController -ErrorAction SilentlyContinue
                     } catch {
-                        # Group doesn't exist, which is expected for planning
+                        # Group doesn't exist at target path, which is expected for planning
                     }
                     
                     if (-not $existingGroup) {

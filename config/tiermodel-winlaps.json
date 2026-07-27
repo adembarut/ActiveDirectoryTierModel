@@ -11,7 +11,7 @@
       "comment": "DSRM decryptor always defaults to Domain Admins (MS specification) — no decryptorGroup needed."
     },
     {
-      "ouDn": "OU=Tier 0 Member Servers,{{DOMAIN_DN}}",
+      "ouDn": "OU=Tier 0 Member Servers,OU=_TierModel,{{DOMAIN_DN}}",
       "computerSelfPermission": true,
       "readGroup": "Tier 0 Server Operators",
       "resetGroup": "Tier 0 Server Operators",
@@ -19,7 +19,7 @@
       "decryptorGpoName": "*- Tier 0 Servers Windows LAPS - Computer"
     },
     {
-      "ouDn": "OU=Tier Model Administration,{{DOMAIN_DN}}",
+      "ouDn": "OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
       "computerSelfPermission": true,
       "readGroup": "Tier 0 Admins",
       "resetGroup": "Tier 0 Admins",
@@ -28,7 +28,7 @@
       "comment": "ACL is on root OU for inheritance; decryptor GPO targets PAW Devices OU specifically."
     },
     {
-      "ouDn": "OU=Tier 1 Member Servers,{{DOMAIN_DN}}",
+      "ouDn": "OU=Tier 1 Member Servers,OU=_TierModel,{{DOMAIN_DN}}",
       "computerSelfPermission": true,
       "readGroup": "Tier 1 Server Operators",
       "resetGroup": "Tier 1 Server Operators",
@@ -36,7 +36,7 @@
       "decryptorGpoName": "*- Tier 1 Servers Windows LAPS - Computer"
     },
     {
-      "ouDn": "OU=Tier 1 PAW Devices,OU=Tier 1,OU=Tier Model Administration,{{DOMAIN_DN}}",
+      "ouDn": "OU=Tier 1 PAW Devices,OU=Tier 1,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
       "computerSelfPermission": true,
       "readGroup": "Tier 1 Admins",
       "resetGroup": "Tier 1 Admins",
@@ -44,7 +44,7 @@
       "decryptorGpoName": "*- Tier 1 PAWs Windows LAPS - Computer"
     },
     {
-      "ouDn": "OU=Tier 2 PAW Devices,OU=Tier 2,OU=Tier Model Administration,{{DOMAIN_DN}}",
+      "ouDn": "OU=Tier 2 PAW Devices,OU=Tier 2,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
       "computerSelfPermission": true,
       "readGroup": "Tier 2 Admins",
       "resetGroup": "Tier 2 Admins",
@@ -52,7 +52,7 @@
       "decryptorGpoName": "*- Tier 2 PAWs Windows LAPS - Computer"
     },
     {
-      "ouDn": "OU=Tier 2 End-User Devices,{{DOMAIN_DN}}",
+      "ouDn": "OU=Tier 2 End-User Devices,OU=_TierModel,{{DOMAIN_DN}}",
       "computerSelfPermission": true,
       "readGroup": "Tier 2 Device Operators",
       "resetGroup": "Tier 2 Device Operators",

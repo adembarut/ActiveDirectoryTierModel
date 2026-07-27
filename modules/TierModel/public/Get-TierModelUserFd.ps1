@@ -27,7 +27,10 @@ function Get-TierModelUserFd {
         [object]$Config,
         
         [Parameter(Mandatory)]
-        [string]$DomainController
+        [string]$DomainController,
+        
+        [Parameter()]
+        [string]$ParentOU
     )
     
     $CorrelationId = if (Get-Variable -Name 'script:CorrelationId' -ErrorAction SilentlyContinue) { $script:CorrelationId } else { [System.Guid]::NewGuid().ToString() }
@@ -35,6 +38,7 @@ function Get-TierModelUserFd {
     Write-TierModelLog -Level Info -Message "UserFdPlanStart" -Data @{
         DomainController = $DomainController
         CorrelationId = $CorrelationId
+        ParentOU = $ParentOU
     } | Out-Null
     
     try {
@@ -51,7 +55,7 @@ function Get-TierModelUserFd {
             foreach ($user in $Config.users) {
                 try {
                     # Replace placeholders in user OU path
-                    $resolvedPath = Resolve-TierModelPlaceholder -Path $user.ouPath -DomainDN $domainDN
+                    $resolvedPath = Resolve-TierModelPlaceholder -Path $user.ouPath -DomainDN $domainDN -ParentOU $ParentOU
                     $userName = $user.displayName
                     $userSamAccountName = $user.samAccountName
                     
@@ -61,9 +65,10 @@ function Get-TierModelUserFd {
                     # Check if user already exists - this is the only check we need
                     $existingUser = $null
                     try {
-                        $existingUser = Get-ADUser -Identity $userSamAccountName -Server $DomainController -ErrorAction SilentlyContinue
+                        $targetUserDn = "CN=$userName,$resolvedPath"
+                        $existingUser = Get-ADUser -Identity $targetUserDn -Server $DomainController -ErrorAction SilentlyContinue
                     } catch {
-                        # User doesn't exist, which is fine - we'll create it
+                        # User doesn't exist at target path, which is fine - we'll create it
                     }
                     
                     if (-not $existingUser) {

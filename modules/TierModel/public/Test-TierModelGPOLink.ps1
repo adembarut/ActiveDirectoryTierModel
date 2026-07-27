@@ -50,7 +50,10 @@ function Test-TierModelGPOLink {
         [bool]$ExpectedEnforced,
         
         [Parameter()]
-        [bool]$ExpectedEnabled = $true
+        [bool]$ExpectedEnabled = $true,
+        
+        [Parameter()]
+        [string]$ParentOU
     )
     
     $CorrelationId = [System.Guid]::NewGuid().ToString()

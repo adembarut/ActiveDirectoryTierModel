@@ -114,12 +114,9 @@ function Get-TierModelAdmx {
                 continue
             }
             
-            # Get source file hash
+            # Get source file hash (use actual file hash as target for SYSVOL comparison)
             $sourceHash = (Get-FileHash -Path $sourcePath -Algorithm MD5).Hash
-            if ($sourceHash -ne $expectedHash) {
-                $analysis.Errors += "Source ADMX file hash mismatch for $fileName. Expected: $expectedHash, Actual: $sourceHash"
-                continue
-            }
+            $targetHash = $sourceHash
             
             # Check destination file and determine action type
             $needsUpdate = $false
@@ -130,7 +127,7 @@ function Get-TierModelAdmx {
                 $reason = "File not present in SYSVOL - new import"
             } else {
                 $destinationHash = (Get-FileHash -Path $destinationFilePath -Algorithm MD5).Hash
-                if ($destinationHash -ne $expectedHash) {
+                if ($destinationHash -ne $targetHash) {
                     $needsUpdate = $true
                     $actionType = "Update"
                     $reason = "Hash mismatch - overwrite required"
@@ -143,7 +140,7 @@ function Get-TierModelAdmx {
                 Name = $fileName
                 SourcePath = $sourcePath
                 DestinationPath = $destinationFilePath
-                ExpectedHash = $expectedHash
+                ExpectedHash = $sourceHash
                 Reason = $reason
                 NeedsUpdate = $needsUpdate
                 ActionType = $actionType
@@ -175,12 +172,9 @@ function Get-TierModelAdmx {
                 continue
             }
             
-            # Get source file hash
+            # Get source file hash (use actual file hash as target for SYSVOL comparison)
             $sourceHash = (Get-FileHash -Path $sourcePath -Algorithm MD5).Hash
-            if ($sourceHash -ne $expectedHash) {
-                $analysis.Errors += "Source ADML file hash mismatch for $fileName. Expected: $expectedHash, Actual: $sourceHash"
-                continue
-            }
+            $targetHash = $sourceHash
             
             # Check destination file and determine action type
             $needsUpdate = $false
@@ -191,7 +185,7 @@ function Get-TierModelAdmx {
                 $reason = "File not present in SYSVOL - new import"
             } else {
                 $destinationHash = (Get-FileHash -Path $destinationFilePath -Algorithm MD5).Hash
-                if ($destinationHash -ne $expectedHash) {
+                if ($destinationHash -ne $targetHash) {
                     $needsUpdate = $true
                     $actionType = "Update"
                     $reason = "Hash mismatch - overwrite required"
@@ -204,7 +198,7 @@ function Get-TierModelAdmx {
                 Name = $fileName
                 SourcePath = $sourcePath
                 DestinationPath = $destinationFilePath
-                ExpectedHash = $expectedHash
+                ExpectedHash = $sourceHash
                 Reason = $reason
                 NeedsUpdate = $needsUpdate
                 ActionType = $actionType

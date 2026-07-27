@@ -125,7 +125,10 @@ param(
     [string]$AdmlLanguage = 'en-US',
     
     [Parameter()]
-    [string]$LogPath
+    [string]$LogPath,
+    
+    [Parameter()]
+    [string]$ParentOU
 )
 
 Set-StrictMode -Version Latest
@@ -162,6 +165,20 @@ if ($OutputFormat -and -not $OutputFileBase) {
 Import-Module (Join-Path $PSScriptRoot 'Modules\TierModel\TierModel.psd1') -Force -Verbose:$false
 
 Write-Host "TierModel module loaded successfully." -ForegroundColor Green
+
+# Auto-detect ParentOU if not explicitly specified
+if ([string]::IsNullOrWhiteSpace($ParentOU)) {
+    try {
+        $domainDN = Resolve-TierModelDomainDN -DomainController $PreferredDc
+        if ($domainDN) {
+            $candidateOu = "OU=_TierModel,$domainDN"
+            if (Get-ADOrganizationalUnit -Identity $candidateOu -Server $PreferredDc -ErrorAction SilentlyContinue) {
+                $ParentOU = "_TierModel"
+                Write-Host "Auto-detected ParentOU: '$ParentOU'" -ForegroundColor Green
+            }
+        }
+    } catch { }
+}
 
 # Validate prerequisites
 Write-Host "Validating prerequisites..." -ForegroundColor Cyan
@@ -227,7 +244,8 @@ function Invoke-OuAudit {
     param(
         [Parameter(Mandatory)] [object]$Config,
         [Parameter(Mandatory)] [string]$DomainController,
-        [switch]$Silent  # For FullDeployment - suppress progress output, return data only
+        [switch]$Silent,  # For FullDeployment - suppress progress output, return data only
+        [string]$ParentOU
     )
     
     if (-not $Silent) {
@@ -235,7 +253,7 @@ function Invoke-OuAudit {
     }
     
     # Perform OU audit
-    $audit = Test-TierModelOu -Config $Config -DomainController $DomainController -IncludeResolvedPaths -Silent:$Silent
+    $audit = Test-TierModelOu -Config $Config -DomainController $DomainController -IncludeResolvedPaths -Silent:$Silent -ParentOU $ParentOU
     
     # Add entity type to audit result for consolidated reporting
     $audit | Add-Member -NotePropertyName 'EntityType' -NotePropertyValue 'OU' -Force
@@ -288,7 +306,8 @@ function Invoke-GroupAudit {
     param(
         [Parameter(Mandatory)] [object]$Config,
         [Parameter(Mandatory)] [string]$DomainController,
-        [switch]$Silent  # For FullDeployment - suppress progress output, return data only
+        [switch]$Silent,  # For FullDeployment - suppress progress output, return data only
+        [string]$ParentOU
     )
     
     if (-not $Silent) {
@@ -296,7 +315,7 @@ function Invoke-GroupAudit {
     }
     
     # Perform Group audit  
-    $audit = Test-TierModelGroup -Config $Config -DomainController $DomainController -Silent:$Silent
+    $audit = Test-TierModelGroup -Config $Config -DomainController $DomainController -Silent:$Silent -ParentOU $ParentOU
     
     # Add entity type to audit result for consolidated reporting
     $audit | Add-Member -NotePropertyName 'EntityType' -NotePropertyValue 'Group' -Force
@@ -349,7 +368,8 @@ function Invoke-UserAudit {
     param(
         [Parameter(Mandatory)] [object]$Config,
         [Parameter(Mandatory)] [string]$DomainController,
-        [switch]$Silent  # For FullDeployment - suppress progress output, return data only
+        [switch]$Silent,  # For FullDeployment - suppress progress output, return data only
+        [string]$ParentOU
     )
     
     if (-not $Silent) {
@@ -357,7 +377,7 @@ function Invoke-UserAudit {
     }
     
     # Perform User audit
-    $audit = Test-TierModelUser -Config $Config -DomainController $DomainController -Silent:$Silent
+    $audit = Test-TierModelUser -Config $Config -DomainController $DomainController -Silent:$Silent -ParentOU $ParentOU
     
     # Add entity type to audit result for consolidated reporting
     $audit | Add-Member -NotePropertyName 'EntityType' -NotePropertyValue 'User' -Force
@@ -410,7 +430,8 @@ function Invoke-OuAclAudit {
     param(
         [Parameter(Mandatory)] [object]$Config,
         [Parameter(Mandatory)] [string]$DomainController,
-        [switch]$Silent  # For FullAudit - suppress progress output, return data only
+        [switch]$Silent,  # For FullAudit - suppress progress output, return data only
+        [string]$ParentOU
     )
     
     if (-not $Silent) {
@@ -426,7 +447,7 @@ function Invoke-OuAclAudit {
     }
     
     # Perform OU ACL audit - the Test function will display its own summary
-    $audit = Test-TierModelOuAcl -Config $Config -DomainController $DomainController -Silent:$Silent
+    $audit = Test-TierModelOuAcl -Config $Config -DomainController $DomainController -Silent:$Silent -ParentOU $ParentOU
     
     # Add entity type to audit result for consolidated reporting
     $audit | Add-Member -NotePropertyName 'EntityType' -NotePropertyValue 'OU ACL' -Force
@@ -438,7 +459,8 @@ function Invoke-GpoAudit {
     param(
         [Parameter(Mandatory)] [object]$Config,
         [Parameter(Mandatory)] [string]$DomainController,
-        [switch]$Silent  # For FullAudit - suppress progress output, return data only
+        [switch]$Silent,  # For FullAudit - suppress progress output, return data only
+        [string]$ParentOU
     )
     
     if (-not $Silent) {
@@ -446,7 +468,7 @@ function Invoke-GpoAudit {
     }
     
     # Perform GPO audit
-    $audit = Test-TierModelGPOAudit -Config $Config -DomainController $DomainController -Silent:$Silent
+    $audit = Test-TierModelGPOAudit -Config $Config -DomainController $DomainController -Silent:$Silent -ParentOU $ParentOU
     
     # Add entity type to audit result for consolidated reporting
     $audit | Add-Member -NotePropertyName 'EntityType' -NotePropertyValue 'GPO' -Force
@@ -495,7 +517,7 @@ if ($FullDeployment) {
     # Phase 1: OUs (silent mode - no intermediate reporting)
     Write-Host "Phase 1: Auditing OUs..." -ForegroundColor Cyan
     try {
-        $ouAudit = Invoke-OuAudit -Config $config -DomainController $PreferredDc -Silent
+        $ouAudit = Invoke-OuAudit -Config $config -DomainController $PreferredDc -Silent -ParentOU $ParentOU
         if ($ouAudit) { $auditResults += $ouAudit }
     } catch {
         Write-Host "  Warning: OU audit failed: $($_.Exception.Message)" -ForegroundColor Yellow
@@ -504,7 +526,7 @@ if ($FullDeployment) {
     # Phase 2: Groups
     Write-Host "Phase 2: Auditing Groups..." -ForegroundColor Cyan
     try {
-        $groupAudit = Invoke-GroupAudit -Config $config -DomainController $PreferredDc -Silent
+        $groupAudit = Invoke-GroupAudit -Config $config -DomainController $PreferredDc -Silent -ParentOU $ParentOU
         if ($groupAudit) { $auditResults += $groupAudit }
     } catch {
         Write-Host "  Warning: Group audit failed: $($_.Exception.Message)" -ForegroundColor Yellow
@@ -513,7 +535,7 @@ if ($FullDeployment) {
     # Phase 3: Users
     Write-Host "Phase 3: Auditing Users..." -ForegroundColor Cyan
     try {
-        $userAudit = Invoke-UserAudit -Config $config -DomainController $PreferredDc -Silent
+        $userAudit = Invoke-UserAudit -Config $config -DomainController $PreferredDc -Silent -ParentOU $ParentOU
         if ($userAudit) { $auditResults += $userAudit }
     } catch {
         Write-Host "  Warning: User audit failed: $($_.Exception.Message)" -ForegroundColor Yellow
@@ -522,7 +544,7 @@ if ($FullDeployment) {
     # Phase 4: OU ACL Delegations
     Write-Host "Phase 4: Auditing OU ACL Delegations..." -ForegroundColor Cyan
     try {
-        $ouAclAudit = Invoke-OuAclAudit -Config $config -DomainController $PreferredDc -Silent
+        $ouAclAudit = Invoke-OuAclAudit -Config $config -DomainController $PreferredDc -Silent -ParentOU $ParentOU
         if ($ouAclAudit) { $auditResults += $ouAclAudit }
     } catch {
         Write-Host "  Warning: OU ACL audit failed: $($_.Exception.Message)" -ForegroundColor Yellow
@@ -531,7 +553,7 @@ if ($FullDeployment) {
     # Phase 5: GPOs
     Write-Host "Phase 5: Auditing GPOs..." -ForegroundColor Cyan
     try {
-        $gpoAudit = Invoke-GpoAudit -Config $config -DomainController $PreferredDc -Silent
+        $gpoAudit = Invoke-GpoAudit -Config $config -DomainController $PreferredDc -Silent -ParentOU $ParentOU
         if ($gpoAudit) { $auditResults += $gpoAudit }
     } catch {
         Write-Host "  Warning: GPO audit failed: $($_.Exception.Message)" -ForegroundColor Yellow
@@ -555,7 +577,7 @@ if ($FullDeployment) {
         
         if ($IncludeMsa) {
             try {
-                $msaAudit = Test-TierModelMsaAcl -Config $config -DomainController $PreferredDc -SuppressSummary
+                $msaAudit = Test-TierModelMsaAcl -Config $config -DomainController $PreferredDc -SuppressSummary -ParentOU $ParentOU
                 if ($msaAudit) {
                     # Wrap flat result into structure with Summary property for consolidated reporting
                     $msaWrapped = [PSCustomObject]@{
@@ -581,7 +603,7 @@ if ($FullDeployment) {
         
         if ($IncludeGmsa) {
             try {
-                $gmsaAudit = Test-TierModelGmsaAcl -Config $config -DomainController $PreferredDc -SuppressSummary
+                $gmsaAudit = Test-TierModelGmsaAcl -Config $config -DomainController $PreferredDc -SuppressSummary -ParentOU $ParentOU
                 if ($gmsaAudit) {
                     # Wrap flat result into structure with Summary property for consolidated reporting
                     $gmsaWrapped = [PSCustomObject]@{
@@ -607,7 +629,7 @@ if ($FullDeployment) {
         
         if ($IncludeDmsa) {
             try {
-                $dmsaAudit = Test-TierModelDmsaAcl -Config $config -DomainController $PreferredDc -SuppressSummary
+                $dmsaAudit = Test-TierModelDmsaAcl -Config $config -DomainController $PreferredDc -SuppressSummary -ParentOU $ParentOU
                 if ($dmsaAudit) {
                     # Wrap flat result into structure with Summary property for consolidated reporting
                     $dmsaWrapped = [PSCustomObject]@{
@@ -633,7 +655,7 @@ if ($FullDeployment) {
         
         if ($IncludeWinLaps) {
             try {
-                $winLapsAclAudit = Test-TierModelWinLapsAcl -Config $config -DomainController $PreferredDc -SuppressSummary
+                $winLapsAclAudit = Test-TierModelWinLapsAcl -Config $config -DomainController $PreferredDc -SuppressSummary -ParentOU $ParentOU
                 if ($winLapsAclAudit) {
                     $winLapsAclWrapped = [PSCustomObject]@{
                         EntityType = 'WinLaps ACL'
@@ -952,7 +974,7 @@ else {
     if ($OuOnly) { 
         Write-Host "=== OU-Only Audit ===" -ForegroundColor Magenta
         try {
-            $ouResult = Invoke-OuAudit -Config $config -DomainController $PreferredDc
+            $ouResult = Invoke-OuAudit -Config $config -DomainController $PreferredDc -ParentOU $ParentOU
             
             # Update audit summary from OU results
             if ($ouResult -and $ouResult.Summary) {
@@ -971,7 +993,7 @@ else {
     }
     if ($GroupOnly) { 
         Write-Host "=== Group-Only Audit ===" -ForegroundColor Magenta
-        $groupResult = Invoke-GroupAudit -Config $config -DomainController $PreferredDc
+        $groupResult = Invoke-GroupAudit -Config $config -DomainController $PreferredDc -ParentOU $ParentOU
         
         # Update audit summary from Group results
         if ($groupResult -and $groupResult.Summary) {
@@ -986,7 +1008,7 @@ else {
     }
     if ($UserOnly) { 
         Write-Host "=== User-Only Audit ===" -ForegroundColor Magenta
-        $userResult = Invoke-UserAudit -Config $config -DomainController $PreferredDc
+        $userResult = Invoke-UserAudit -Config $config -DomainController $PreferredDc -ParentOU $ParentOU
         
         # Update audit summary from User results
         if ($userResult -and $userResult.Summary) {
@@ -1001,7 +1023,7 @@ else {
     }
     if ($OuAclsOnly) { 
         Write-Host "=== OU ACL-Only Audit ===" -ForegroundColor Magenta
-        $ouAclResult = Invoke-OuAclAudit -Config $config -DomainController $PreferredDc
+        $ouAclResult = Invoke-OuAclAudit -Config $config -DomainController $PreferredDc -ParentOU $ParentOU
         
         # Update audit summary from OU ACL results
         if ($ouAclResult -and $ouAclResult.Summary) {
@@ -1032,7 +1054,7 @@ else {
     }
     if ($GposOnly) { 
         Write-Host "=== GPO-Only Audit ===" -ForegroundColor Magenta
-        $gpoResult = Invoke-GpoAudit -Config $config -DomainController $PreferredDc
+        $gpoResult = Invoke-GpoAudit -Config $config -DomainController $PreferredDc -ParentOU $ParentOU
         
         # Update audit summary from GPO results
         if ($gpoResult -and $gpoResult.Summary) {

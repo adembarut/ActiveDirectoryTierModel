@@ -54,7 +54,7 @@ function New-TierModelGpo {
             try {
                 $gpoData = $action.Data
                 $gpoName = $gpoData.name
-                $gpoMode = $action.Mode
+                $gpoMode = if ($action.PSObject.Properties.Name -contains 'Mode' -and $action.Mode) { $action.Mode } elseif ($gpoData.PSObject.Properties.Name -contains 'mode' -and $gpoData.mode) { $gpoData.mode } else { 'create' }
                 $targetOUPath = $action.Path
                 
                 Write-TierModelLog -Level Info -Message "Creating GPO" -Data @{

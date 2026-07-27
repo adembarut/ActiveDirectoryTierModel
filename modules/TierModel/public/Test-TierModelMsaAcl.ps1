@@ -17,7 +17,10 @@ function Test-TierModelMsaAcl {
         
         [switch]$Silent,
         
-        [switch]$SuppressSummary
+        [switch]$SuppressSummary,
+        
+        [Parameter()]
+        [string]$ParentOU
     )
     
     $CorrelationId = [System.Guid]::NewGuid().ToString()
@@ -27,6 +30,7 @@ function Test-TierModelMsaAcl {
         DomainController = $DomainController
         Silent = $Silent.IsPresent
         CorrelationId = $CorrelationId
+        ParentOU = $ParentOU
     } | Out-Null
     
     try {
@@ -110,7 +114,7 @@ function Test-TierModelMsaAcl {
         $delegationGroups = @{}
         foreach ($acl in @($Config.msaAclDelegations)) {
             try {
-                $targetOUPath = Resolve-TierModelPlaceholder -Path $acl.targetOUPath -DomainDN $domainDN
+                $targetOUPath = Resolve-TierModelPlaceholder -Path $acl.targetOUPath -DomainDN $domainDN -ParentOU $ParentOU
                 $key = "$targetOUPath||$($acl.identityreference)"
                 
                 if (-not $delegationGroups.ContainsKey($key)) {

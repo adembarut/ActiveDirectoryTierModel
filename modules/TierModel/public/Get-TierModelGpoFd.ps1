@@ -36,7 +36,10 @@ function Get-TierModelGpoFd {
         
         [switch]$IncludeDetails,
         
-        [switch]$Silent
+        [switch]$Silent,
+        
+        [Parameter()]
+        [string]$ParentOU
     )
     
     $CorrelationId = [System.Guid]::NewGuid().ToString()
@@ -45,6 +48,7 @@ function Get-TierModelGpoFd {
     Write-TierModelLog -Level Info -Message "GPO Full Deployment planning start" -Data @{
         DomainController = $DomainController
         CorrelationId = $CorrelationId
+        ParentOU = $ParentOU
     } | Out-Null
     
     try {
@@ -144,6 +148,16 @@ function Get-TierModelGpoFd {
                     }
                 } else {
                     # GPO exists - check what actions are still needed
+                    if (-not $IsImportOnly -and $GpoConfig.PSObject.Properties['mode'] -and $GpoConfig.mode -in @('createImportAndConfigure', 'importAndConfigure')) {
+                        $actions += [PSCustomObject]@{
+                            Action = 'ConfigureGPO'
+                            Name = $actualGpoName
+                            Path = $TargetOU
+                            Data = $GpoConfig
+                            Risk = 'Medium'
+                            IsTemplate = $IsTemplate
+                        }
+                    }
                     if (-not $IsTemplate) {
                         # For Full Deployment: Check if GPO is linked, but only for domain root and built-in containers
                         # For custom OUs, assume linking will be done during deployment
@@ -246,8 +260,8 @@ function Get-TierModelGpoFd {
                 # Handle TemplateGpos section separately - these are not linked to OUs
                 $isTemplate = ($ouPath -eq "TemplateGpos")
                 
-                # Replace placeholders in OU path
-                $resolvedOUPath = $ouPath -replace '\{\{DOMAIN_DN\}\}', $domainDN
+                # Replace placeholders in OU path using Resolve-TierModelPlaceholder
+                $resolvedOUPath = Resolve-TierModelPlaceholder -Path $ouPath -DomainDN $domainDN -ParentOU $ParentOU
                 
                 # Full Deployment: Only validate OUs that must exist (Domain root, built-in containers)
                 # Skip validation for custom OUs as they will be created in Phase 1

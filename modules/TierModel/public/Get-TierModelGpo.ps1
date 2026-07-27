@@ -39,7 +39,10 @@ function Get-TierModelGpo {
         
         [switch]$IncludeDetails,
         
-        [switch]$Silent
+        [switch]$Silent,
+        
+        [Parameter()]
+        [string]$ParentOU
     )
     
     $CorrelationId = [System.Guid]::NewGuid().ToString()
@@ -48,6 +51,7 @@ function Get-TierModelGpo {
     Write-TierModelLog -Level Info -Message "GPO planning start" -Data @{
         DomainController = $DomainController
         CorrelationId = $CorrelationId
+        ParentOU = $ParentOU
     } | Out-Null
     
     try {
@@ -97,8 +101,8 @@ function Get-TierModelGpo {
                 # Handle TemplateGpos section separately - these are not linked to OUs
                 $isTemplate = ($ouPath -eq "TemplateGpos")
                 
-                # Replace placeholders in OU path
-                $resolvedOUPath = $ouPath -replace '\{\{DOMAIN_DN\}\}', $domainDN
+                # Replace placeholders in OU path using Resolve-TierModelPlaceholder
+                $resolvedOUPath = Resolve-TierModelPlaceholder -Path $ouPath -DomainDN $domainDN -ParentOU $ParentOU
                 
                 # Validate target OU exists (skip for template GPOs)
                 $ouExists = $true
@@ -305,7 +309,20 @@ function Get-TierModelGpo {
                                 }
                                 $riskSummary.MediumRisk++
                             } else {
-                                # GPO exists, check if it's linked to the target OU
+                                # GPO exists - plan ConfigureGPO if mode requires configuration
+                                if ($gpoMode -in @('createImportAndConfigure', 'importAndConfigure')) {
+                                    $planActions += [PSCustomObject]@{
+                                        Action = 'ConfigureGPO'
+                                        ResourceType = 'GPO'
+                                        Name = "$actualGpoName (Configure)"
+                                        Path = $resolvedOUPath
+                                        Data = $gpo
+                                        GPOName = $actualGpoName
+                                        Phase = 3
+                                    }
+                                    $riskSummary.Update++
+                                }
+                                # Check if it's linked to the target OU
                                 $gpoLinked = $false
                                 try {
                                     # Check if GPO is linked to this OU

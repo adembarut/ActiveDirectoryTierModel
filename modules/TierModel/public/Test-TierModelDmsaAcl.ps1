@@ -17,7 +17,10 @@ function Test-TierModelDmsaAcl {
         
         [switch]$Silent,
         
-        [switch]$SuppressSummary
+        [switch]$SuppressSummary,
+        
+        [Parameter()]
+        [string]$ParentOU
     )
     
     $CorrelationId = [System.Guid]::NewGuid().ToString()
@@ -27,6 +30,7 @@ function Test-TierModelDmsaAcl {
         DomainController = $DomainController
         Silent = $Silent.IsPresent
         CorrelationId = $CorrelationId
+        ParentOU = $ParentOU
     } | Out-Null
     
     try {
@@ -60,10 +64,21 @@ function Test-TierModelDmsaAcl {
             Write-Host "Auditing dMSA ACL delegations..." -ForegroundColor Cyan
         }
         
-        $dmsaGuid = Resolve-DomainSpecificGuid -AttributeName 'msDS-DelegatedManagedServiceAccount' -SchemaObjectClass 'classSchema' -DomainController $DomainController
+        $dmsaGuid = try { Resolve-DomainSpecificGuid -AttributeName 'msDS-DelegatedManagedServiceAccount' -SchemaObjectClass 'classSchema' -DomainController $DomainController -ErrorAction SilentlyContinue } catch { $null }
         $parsedDmsaGuid = [Guid]::Empty
         if ([string]::IsNullOrEmpty([string]$dmsaGuid) -or -not [Guid]::TryParse([string]$dmsaGuid, [ref]$parsedDmsaGuid) -or $parsedDmsaGuid -eq [Guid]::Empty) {
-            throw "Failed to resolve domain-specific GUID for 'msDS-DelegatedManagedServiceAccount'."
+            Write-Host "  ⚠️  dMSA schema attribute 'msDS-DelegatedManagedServiceAccount' not found in Active Directory. Skipping dMSA ACL audit." -ForegroundColor Yellow
+            return [PSCustomObject]@{
+                TotalChecked = 0
+                Compliant = 0
+                Missing = 0
+                Mismatched = 0
+                Errors = 0
+                Drift = 0
+                Findings = @()
+                DurationMs = ((Get-Date) - $startTime).TotalMilliseconds
+                CorrelationId = $CorrelationId
+            }
         }
         
         $resolveAclGuid = {
@@ -120,7 +135,7 @@ function Test-TierModelDmsaAcl {
         $delegationGroups = @{}
         foreach ($acl in @($Config.dmsaAclDelegations)) {
             try {
-                $targetOUPath = Resolve-TierModelPlaceholder -Path $acl.targetOUPath -DomainDN $domainDN
+                $targetOUPath = Resolve-TierModelPlaceholder -Path $acl.targetOUPath -DomainDN $domainDN -ParentOU $ParentOU
                 $key = "$targetOUPath||$($acl.identityreference)"
                 
                 if (-not $delegationGroups.ContainsKey($key)) {

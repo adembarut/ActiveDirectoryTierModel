@@ -69,10 +69,12 @@ function Test-TierModelAdmx {
         $admxConfig = Get-Content $admxConfigPath | ConvertFrom-Json
         $admlConfig = Get-Content $admlConfigPath | ConvertFrom-Json
         
-        # Get destination paths - use PreferredDc for UNC path, domain for SYSVOL directory
+        # Get source and destination paths
+        $admxSourcePath = Join-Path $tierModelRoot $admxConfig.admx.sourcePath.Replace('\\', '\\')
+        $admlSourcePath = Join-Path $tierModelRoot $admlConfig.adml.sourcePath.Replace('\\', '\\')
         $admxDestinationPath = $admxConfig.admx.destinationPath -replace '\\\\{{DOMAIN_FQDN}}\\SYSVOL\\{{DOMAIN_FQDN}}\\', "\\$DomainController\SYSVOL\$($domain.ToUpper())\"
         $admlDestinationPath = $admlConfig.adml.destinationPath -replace '\\\\{{DOMAIN_FQDN}}\\SYSVOL\\{{DOMAIN_FQDN}}\\', "\\$DomainController\SYSVOL\$($domain.ToUpper())\"
-        
+
         $auditResults = @()
         $findings = @()
         $totalChecked = 0
@@ -85,6 +87,8 @@ function Test-TierModelAdmx {
         foreach ($admxFile in $admxConfig.admx.files.PSObject.Properties) {
             $fileName = $admxFile.Name
             $expectedHash = $admxFile.Value.hash
+            $sourcePath = Join-Path $admxSourcePath $fileName
+            $targetHash = if (Test-Path $sourcePath) { (Get-FileHash -Path $sourcePath -Algorithm MD5).Hash } else { $expectedHash }
             $destinationFilePath = Join-Path $admxDestinationPath $fileName
             
             $totalChecked++
@@ -92,7 +96,7 @@ function Test-TierModelAdmx {
             $result = [PSCustomObject]@{
                 Type = 'ADMX'
                 FileName = $fileName
-                ExpectedHash = $expectedHash
+                ExpectedHash = $targetHash
                 ActualHash = $null
                 Path = $destinationFilePath
                 Status = 'Unknown'
@@ -122,7 +126,7 @@ function Test-TierModelAdmx {
                 $actualHash = (Get-FileHash -Path $destinationFilePath -Algorithm MD5).Hash
                 $result.ActualHash = $actualHash
                 
-                if ($actualHash -eq $expectedHash) {
+                if ($actualHash -eq $targetHash) {
                     $result.Status = 'Pass'
                     $totalPassed++
                     Write-Host "  ✅ ADMX OK: $fileName" -ForegroundColor Green
@@ -138,7 +142,7 @@ function Test-TierModelAdmx {
                         Type = 'Mismatch'
                         ResourceType = 'ADMX'
                         FileName = $fileName
-                        Message = "ADMX file hash does not match expected value (Expected: $expectedHash, Actual: $actualHash)"
+                        Message = "ADMX file hash does not match expected value (Expected: $targetHash, Actual: $actualHash)"
                     }
                 }
             }
@@ -151,6 +155,8 @@ function Test-TierModelAdmx {
         foreach ($admlFile in $admlConfig.adml.files.PSObject.Properties) {
             $fileName = $admlFile.Name
             $expectedHash = $admlFile.Value.hash
+            $sourcePath = Join-Path $admlSourcePath $fileName
+            $targetHash = if (Test-Path $sourcePath) { (Get-FileHash -Path $sourcePath -Algorithm MD5).Hash } else { $expectedHash }
             $destinationFilePath = Join-Path $admlDestinationPath $fileName
             
             $totalChecked++
@@ -158,7 +164,7 @@ function Test-TierModelAdmx {
             $result = [PSCustomObject]@{
                 Type = 'ADML'
                 FileName = $fileName
-                ExpectedHash = $expectedHash
+                ExpectedHash = $targetHash
                 ActualHash = $null
                 Path = $destinationFilePath
                 Language = $AdmlLanguage
@@ -189,7 +195,7 @@ function Test-TierModelAdmx {
                 $actualHash = (Get-FileHash -Path $destinationFilePath -Algorithm MD5).Hash
                 $result.ActualHash = $actualHash
                 
-                if ($actualHash -eq $expectedHash) {
+                if ($actualHash -eq $targetHash) {
                     $result.Status = 'Pass'
                     $totalPassed++
                     Write-Host "  ✅ ADML OK: $fileName" -ForegroundColor Green
@@ -205,7 +211,7 @@ function Test-TierModelAdmx {
                         Type = 'Mismatch'
                         ResourceType = 'ADML'
                         FileName = $fileName
-                        Message = "ADML file hash does not match expected value (Expected: $expectedHash, Actual: $actualHash)"
+                        Message = "ADML file hash does not match expected value (Expected: $targetHash, Actual: $actualHash)"
                     }
                 }
             }

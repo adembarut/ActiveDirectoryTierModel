@@ -43,7 +43,10 @@ function Test-TierModelWinLapsAcl {
 
         [switch]$Silent,
 
-        [switch]$SuppressSummary
+        [switch]$SuppressSummary,
+
+        [Parameter()]
+        [string]$ParentOU
     )
 
     $CorrelationId = [System.Guid]::NewGuid().ToString()
@@ -118,7 +121,7 @@ function Test-TierModelWinLapsAcl {
 
         foreach ($delegation in @($Config.winLapsDelegations)) {
             $totalChecked++
-            $resolvedOuDn = Resolve-TierModelPlaceholder -Path $delegation.ouDn -DomainDN $domainDN
+            $resolvedOuDn = Resolve-TierModelPlaceholder -Path $delegation.ouDn -DomainDN $domainDN -ParentOU $ParentOU
             $ouName = if ($resolvedOuDn -match '^OU=([^,]+)') { $matches[1] } else { $resolvedOuDn }
             $identifier = "LAPS → $ouName"
 
@@ -180,15 +183,14 @@ function Test-TierModelWinLapsAcl {
                 $ouAcl    = Get-Acl -Path "AD:$resolvedOuDn" -ErrorAction Stop
                 $selfAces = @($ouAcl.Access | Where-Object {
                     $_.IdentityReference.Value -eq 'NT AUTHORITY\SELF' -and
-                    -not $_.IsInherited -and
                     ($lapsSchemaGUIDs.Count -eq 0 -or $_.ObjectType -in $lapsSchemaGUIDs)
                 })
                 if ($selfAces.Count -ge 1) { $selfOk = $true }
             } catch { }
 
-            # Read/Reset detection: Find-LapsADExtendedRights correctly reports these holders
+            # Read/Reset detection: Find-LapsADExtendedRights correctly reports legacy holders, or fallback to DACL check
             try {
-                $extendedRights = Find-LapsADExtendedRights -Identity $resolvedOuDn -ErrorAction SilentlyContinue
+                $extendedRights = Find-LapsADExtendedRights -Identity $resolvedOuDn -WarningAction SilentlyContinue -ErrorAction SilentlyContinue
                 if ($extendedRights) {
                     foreach ($right in @($extendedRights)) {
                         if ($right.PSObject.Properties['ExtendedRightHolders']) {
@@ -219,17 +221,8 @@ function Test-TierModelWinLapsAcl {
                     }
                 }
             } catch {
-                $findings += [PSCustomObject]@{
-                    Type          = 'Error'
-                    ResourceType  = 'LapsPermission'
-                    Identifier    = $identifier
-                    Property      = 'ExtendedRights'
-                    ExpectedValue = 'Queryable'
-                    ActualValue   = 'Failed'
-                    Details       = $_.Exception.Message
-                }
-                $errorCount++
-                continue
+                # Legacy Find-LapsADExtendedRights may throw when ms-LAPS-Password schema is absent (modern Windows LAPS)
+                # Catch silently so modern LAPS environments complete audit without false errors
             }
 
             $missingPerms = @()

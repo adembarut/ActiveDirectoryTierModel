@@ -32,7 +32,10 @@ function Get-TierModelOu {
         [Parameter(Mandatory)]
         [string]$DomainController,
         
-        [switch]$IncludeDetails
+        [switch]$IncludeDetails,
+        
+        [Parameter()]
+        [string]$ParentOU
     )
     
     $CorrelationId = $script:CorrelationId
@@ -40,6 +43,7 @@ function Get-TierModelOu {
         CorrelationId = $CorrelationId
         DomainController = $DomainController
         IncludeDetails = $IncludeDetails.IsPresent
+        ParentOU = $ParentOU
     } | Out-Null
     
     $actions = @()
@@ -48,8 +52,38 @@ function Get-TierModelOu {
     $ordering = @()
     
     try {
-        # Resolve domain DN
+        # Resolve domain DN and effective base DN
         $domainDN = Resolve-TierModelDomainDN -DomainController $DomainController
+        $effectiveBaseDN = Resolve-TierModelPlaceholder -Path '' -DomainDN $domainDN -ParentOU $ParentOU
+        
+        # If ParentOU is specified and is an OU (starts with OU=), ensure the Parent OU itself exists
+        if (-not [string]::IsNullOrWhiteSpace($ParentOU) -and $effectiveBaseDN -ne $domainDN) {
+            $parentExistence = Test-TierModelOuExists -DistinguishedName $effectiveBaseDN -DomainController $DomainController
+            if (-not $parentExistence.Exists) {
+                # Extract Parent OU name and target parent path
+                $parentParts = $effectiveBaseDN -split ',', 2
+                $parentName = $parentParts[0] -replace '^OU=', ''
+                $parentTargetContainer = $parentParts[1]
+                
+                $parentOuData = [PSCustomObject]@{
+                    name = $parentName
+                    path = $parentTargetContainer
+                    protectFromAccidentalDeletion = $true
+                    disableInheritance = $false
+                    blockGpoInheritance = $false
+                    comment = "Parent OU for Tier Model"
+                    correctedPath = $parentTargetContainer
+                }
+                
+                $actions += [PSCustomObject]@{
+                    Action = 'CreateOU'
+                    ResourceType = 'OrganizationalUnit'
+                    Name = $parentName
+                    Path = $parentTargetContainer
+                    Data = $parentOuData
+                }
+            }
+        }
         
         # Check if organizationUnits exists in config
         if (-not $Config.PSObject.Properties['organizationUnits'] -or -not $Config.organizationUnits) {
@@ -61,29 +95,29 @@ function Get-TierModelOu {
             # Sort OUs by dependency order: root-level first, then by depth
             # This ensures parent OUs are created before child OUs
             $sortedOUs = $Config.organizationUnits | Sort-Object {
-                $resolvedPath = Resolve-TierModelOuPath -OuPath $_.path -DomainDN $domainDN
-                if ($resolvedPath -eq $domainDN) {
-                    0  # Root level OUs first
+                $resolvedPath = Resolve-TierModelOuPath -OuPath $_.path -DomainDN $domainDN -ParentOU $ParentOU
+                if ($resolvedPath -eq $effectiveBaseDN) {
+                    0  # Base level OUs first
                 } else {
                     ($resolvedPath -split ',').Count  # Sort by depth (comma count)
                 }
             }
             
             $ordering = $sortedOUs | ForEach-Object {
-                $resolvedPath = Resolve-TierModelOuPath -OuPath $_.path -DomainDN $domainDN
+                $resolvedPath = Resolve-TierModelOuPath -OuPath $_.path -DomainDN $domainDN -ParentOU $ParentOU
                 [PSCustomObject]@{
                     Name = $_.name
                     OriginalPath = $_.path
                     ResolvedPath = $resolvedPath
                     DistinguishedName = "OU=$($_.name),$resolvedPath"
-                    Depth = if ($resolvedPath -eq $domainDN) { 0 } else { ($resolvedPath -split ',').Count }
+                    Depth = if ($resolvedPath -eq $effectiveBaseDN) { 0 } else { ($resolvedPath -split ',').Count }
                 }
             }
             
             foreach ($ou in $sortedOUs) {
                 try {
                     # Resolve path with placeholder replacement
-                    $resolvedPath = Resolve-TierModelOuPath -OuPath $ou.path -DomainDN $domainDN
+                    $resolvedPath = Resolve-TierModelOuPath -OuPath $ou.path -DomainDN $domainDN -ParentOU $ParentOU
                     $ouDistinguishedName = "OU=$($ou.name),$resolvedPath"
                     
                     Write-TierModelLog -Level Debug -Message "OuExistCheck" -Data @{
@@ -122,6 +156,26 @@ function Get-TierModelOu {
                             Exists = $true
                             CorrelationId = $CorrelationId
                         } | Out-Null
+                        
+                        # Check if existing OU requires GPO inheritance blocking configuration
+                        if ($ou.PSObject.Properties['blockGpoInheritance'] -and $ou.blockGpoInheritance -eq $true) {
+                            try {
+                                $gpInherit = Get-GPInheritance -Target $ouDistinguishedName -Server $DomainController -ErrorAction SilentlyContinue
+                                if ($gpInherit -and $gpInherit.GpoInheritanceBlocked -ne $true) {
+                                    $ouDataForConfig = $ou.PSObject.Copy()
+                                    $ouDataForConfig | Add-Member -NotePropertyName 'correctedPath' -NotePropertyValue $resolvedPath -Force
+                                    $ouDataForConfig | Add-Member -NotePropertyName 'distinguishedName' -NotePropertyValue $ouDistinguishedName -Force
+                                    
+                                    $actions += [PSCustomObject]@{
+                                        Action = 'ConfigureOU'
+                                        ResourceType = 'OrganizationalUnit'
+                                        Name = $ou.name
+                                        Path = $resolvedPath
+                                        Data = $ouDataForConfig
+                                    }
+                                }
+                            } catch { }
+                        }
                     }
                 } catch {
                     $errorMsg = "Failed to analyze OU '$($ou.name)': $($_.Exception.Message)"

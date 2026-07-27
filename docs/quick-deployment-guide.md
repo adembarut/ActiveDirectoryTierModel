@@ -43,22 +43,22 @@ cd C:\TierModel
 Run the deploy script in **planning mode** (default behavior) to preview all changes without applying them:
 
 ```powershell
-.\Deploy-TierModel.ps1 -FullDeployment -PreferredDc DC01.contoso.com
+.\Deploy-TierModel.ps1 -FullDeployment -PreferredDc DC01.contoso.com -ParentOU TierModel
 ```
 
 This will:
 - Validate prerequisites
-- Generate a deployment plan showing all proposed changes
+- Generate a deployment plan showing all proposed changes under `OU=TierModel`
 - Display adds, updates, and potential issues
 - **NOT apply any changes** to Active Directory
 
 Review the output carefully to ensure the planned changes are correct.
 
 ### Step 2: Execute the Deployment
-After reviewing the plan, apply the changes using the `-ConfirmApply` parameter:
+After reviewing the plan, apply the changes using the `-ConfirmApply` parameter (specify `-ParentOU` if deploying under a custom root OU name, default is `_TierModel`):
 
 ```powershell
-.\Deploy-TierModel.ps1 -FullDeployment -PreferredDc DC01.contoso.com -ConfirmApply
+.\Deploy-TierModel.ps1 -FullDeployment -PreferredDc DC01.contoso.com -ParentOU TierModel -ConfirmApply
 ```
 
 This will deploy all Tier Model components in the correct dependency order:
@@ -69,16 +69,18 @@ This will deploy all Tier Model components in the correct dependency order:
 5. Group Policy Objects (GPOs)
 6. ADMX Administrative Templates
 
+> **Custom Parent OU Support**: To deploy into a specific root OU (e.g. `TierModel` or `EnterpriseTiers`), pass `-ParentOU <OUName>`. All child OUs, security groups, users, OU ACL delegations, and GPO links will automatically target `OU=<OUName>,DC=domain,DC=com`.
+>
 > **Optional features** (MSA/gMSA/dMSA ACL delegations, Windows LAPS ACL delegations + GPO decryptor) are **not** included in a standard `-FullDeployment` — add the appropriate switches to enable them:
 > ```powershell
-> .\Deploy-TierModel.ps1 -FullDeployment -IncludeMsa -IncludeGmsa -IncludeDmsa -IncludeWinLaps -PreferredDc DC01.contoso.com -ConfirmApply
+> .\Deploy-TierModel.ps1 -FullDeployment -IncludeMsa -IncludeGmsa -IncludeDmsa -IncludeWinLaps -PreferredDc DC01.contoso.com -ParentOU TierModel -ConfirmApply
 > ```
 
 ### Step 3: Audit the Deployment
-After deployment completes, run a full audit to verify compliance and detect any drift:
+After deployment completes, run a full audit to verify compliance and detect any drift (matching the `-ParentOU` used during deployment):
 
 ```powershell
-.\Audit-TierModel.ps1 -FullDeployment -PreferredDc DC01.contoso.com
+.\Audit-TierModel.ps1 -FullDeployment -PreferredDc DC01.contoso.com -IncludeMsa -IncludeGmsa -IncludeDmsa -IncludeWinLaps -ParentOU TierModel
 ```
 
 This will:

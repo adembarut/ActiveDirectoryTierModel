@@ -34,7 +34,10 @@ function Test-TierModelOu {
         
         [switch]$IncludeResolvedPaths,
         
-        [switch]$Silent
+        [switch]$Silent,
+        
+        [Parameter()]
+        [string]$ParentOU
     )
     
     $CorrelationId = $script:CorrelationId
@@ -42,6 +45,7 @@ function Test-TierModelOu {
         CorrelationId = $CorrelationId
         DomainController = $DomainController
         IncludeResolvedPaths = $IncludeResolvedPaths.IsPresent
+        ParentOU = $ParentOU
     } | Out-Null
     
     $driftFindings = @()
@@ -68,7 +72,7 @@ function Test-TierModelOu {
                 
                 try {
                     # Resolve path with placeholder replacement (same logic as deployment)
-                    $resolvedPath = Resolve-TierModelOuPath -OuPath $ou.path -DomainDN $domainDN
+                    $resolvedPath = Resolve-TierModelOuPath -OuPath $ou.path -DomainDN $domainDN -ParentOU $ParentOU
                     $ouDistinguishedName = "OU=$($ou.name),$resolvedPath"
                     
                     if ($IncludeResolvedPaths) {

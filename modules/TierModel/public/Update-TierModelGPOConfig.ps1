@@ -56,7 +56,7 @@ function Update-TierModelGPOConfig {
             try {
                 $gpoData = $action.Data
                 $gpoName = $gpoData.name
-                $targetOUPath = $action.Path
+                $targetOUPath = if ($action.PSObject.Properties.Name -contains 'Path') { $action.Path } else { $null }
                 
                 Write-TierModelLog -Level Info -Message "Configuring GPO" -Data @{
                     Name = $gpoName

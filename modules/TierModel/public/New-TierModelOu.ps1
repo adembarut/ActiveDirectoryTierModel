@@ -38,13 +38,13 @@ function New-TierModelOu {
     $startTime = Get-Date
     
     # Ensure we have a proper array for counting
-    $createActions = @($Plan.Actions | Where-Object { $_.Action -eq 'CreateOU' })
+    $ouActions = @($Plan.Actions | Where-Object { $_.Action -in @('CreateOU', 'ConfigureOU') })
     
     Write-TierModelLog -Level Info -Message "OuCreateStart" -Data @{
         CorrelationId = $CorrelationId
         DomainController = $DomainController
         WhatIf = $WhatIfPreference
-        PlanActionCount = $createActions.Count
+        PlanActionCount = $ouActions.Count
     } | Out-Null
     
     $applied = @()
@@ -52,17 +52,31 @@ function New-TierModelOu {
     $errors = @()
     
     try {
-        if ($createActions.Count -eq 0) {
-            Write-TierModelLog -Level Info -Message "No OU creation actions in plan" -Data @{
+        if ($ouActions.Count -eq 0) {
+            Write-TierModelLog -Level Info -Message "No OU creation or configuration actions in plan" -Data @{
                 CorrelationId = $CorrelationId
             } | Out-Null
         }
         
-        foreach ($action in $createActions) {
+        foreach ($action in $ouActions) {
             try {
                 $ouData = $action.Data
                 $ouName = $ouData.name
                 $ouPath = $action.Path
+                
+                if ($action.Action -eq 'ConfigureOU') {
+                    $ouDN = if ($ouData.PSObject.Properties['distinguishedName']) { $ouData.distinguishedName } else { "OU=$ouName,$ouPath" }
+                    if ($ouData.PSObject.Properties['blockGpoInheritance'] -and $ouData.blockGpoInheritance -eq $true) {
+                        Set-GPInheritance -Target $ouDN -IsBlocked Yes -Server $DomainController | Out-Null
+                        Write-Host "  ✅ Configured GPO Inheritance Block: $ouName" -ForegroundColor Green
+                        $applied += [PSCustomObject]@{
+                            Name = $ouName
+                            DistinguishedName = $ouDN
+                            ActionsPerformed = @('BlockGpoInheritance')
+                        }
+                    }
+                    continue
+                }
                 
                 # Get description safely - use comment if description doesn't exist
                 $ouDescription = if ($ouData.PSObject.Properties.Name -contains 'description') { 

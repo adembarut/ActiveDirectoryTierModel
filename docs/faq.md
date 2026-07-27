@@ -127,6 +127,10 @@ The high-level migration path is:
 - No objects are created, modified, or deleted during a dry-run
 - Review the output carefully before committing to a full deployment
 
+### Can I deploy into a custom parent OU instead of `_TierModel`?
+- **Yes.** Pass the `-ParentOU <OUName>` parameter to `Deploy-TierModel.ps1`, `Audit-TierModel.ps1`, or `Deploy-TierModelAuthSilo.ps1` (e.g. `-ParentOU TierModel` or `-ParentOU EnterpriseTiers`).
+- All 31 OUs, 26 groups, 2 users, 101 OU ACL delegations, 131 GPO links, and optional MSA/gMSA/dMSA/WinLAPS/AuthSilo delegations will dynamically resolve under `OU=<OUName>,DC=domain,DC=com`.
+
 ### What is the difference between `-FullDeployment` and component-specific switches?
 - `-FullDeployment` deploys all core components in the correct order of precedence
 - Component switches (`-OuOnly`, `-GroupOnly`, `-GposOnly`, etc.) deploy only that component

@@ -29,7 +29,10 @@ function Get-TierModelUser {
         [Parameter(Mandatory)]
         [string]$DomainController,
         
-        [switch]$Silent
+        [switch]$Silent,
+        
+        [Parameter()]
+        [string]$ParentOU
     )
     
     $CorrelationId = [System.Guid]::NewGuid().ToString()
@@ -37,6 +40,7 @@ function Get-TierModelUser {
     Write-TierModelLog -Level Info -Message "UserPlanStart" -Data @{
         DomainController = $DomainController
         CorrelationId = $CorrelationId
+        ParentOU = $ParentOU
     } | Out-Null
     
     try {
@@ -53,7 +57,7 @@ function Get-TierModelUser {
             foreach ($user in $Config.users) {
                 try {
                     # Replace placeholders in user OU path
-                    $resolvedPath = Resolve-TierModelPlaceholder -Path $user.ouPath -DomainDN $domainDN
+                    $resolvedPath = Resolve-TierModelPlaceholder -Path $user.ouPath -DomainDN $domainDN -ParentOU $ParentOU
                     $userName = $user.displayName
                     $userSamAccountName = $user.samAccountName
                     
@@ -109,9 +113,10 @@ function Get-TierModelUser {
                     # Check if user already exists
                     $existingUser = $null
                     try {
-                        $existingUser = Get-ADUser -Identity $userSamAccountName -Server $DomainController -ErrorAction SilentlyContinue
+                        $targetUserDn = "CN=$userName,$resolvedPath"
+                        $existingUser = Get-ADUser -Identity $targetUserDn -Server $DomainController -ErrorAction SilentlyContinue
                     } catch {
-                        # User doesn't exist, which is fine - we'll create it
+                        # User doesn't exist at target path, which is fine - we'll create it
                     }
                     
                     if (-not $existingUser) {

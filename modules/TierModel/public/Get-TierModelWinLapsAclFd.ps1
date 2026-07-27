@@ -43,7 +43,10 @@ function Get-TierModelWinLapsAclFd {
 
         [switch]$IncludeDetails,
 
-        [switch]$Silent
+        [switch]$Silent,
+
+        [Parameter()]
+        [string]$ParentOU
     )
 
     $CorrelationId = if (Get-Variable -Name 'script:CorrelationId' -ErrorAction SilentlyContinue) { $script:CorrelationId } else { [System.Guid]::NewGuid().ToString() }
@@ -225,7 +228,7 @@ function Get-TierModelWinLapsAclFd {
 
         # For each delegation, check existing state and plan actions
         foreach ($delegation in $delegations) {
-            $resolvedOuDn = Resolve-TierModelPlaceholder -Path $delegation.ouDn -DomainDN $domainDN
+            $resolvedOuDn = Resolve-TierModelPlaceholder -Path $delegation.ouDn -DomainDN $domainDN -ParentOU $ParentOU
             $ouName = if ($resolvedOuDn -match '^OU=([^,]+)') { $matches[1] } else { $resolvedOuDn }
 
             # Normalize readGroup/resetGroup to arrays and resolve
@@ -272,7 +275,6 @@ function Get-TierModelWinLapsAclFd {
                     $ouAcl = Get-Acl -Path "AD:$resolvedOuDn" -ErrorAction Stop
                     $selfAces = @($ouAcl.Access | Where-Object {
                         $_.IdentityReference.Value -eq 'NT AUTHORITY\SELF' -and
-                        -not $_.IsInherited -and
                         ($lapsSchemaGUIDs.Count -eq 0 -or $_.ObjectType -in $lapsSchemaGUIDs)
                     })
                     if ($selfAces.Count -ge 1) { $selfExists = $true }

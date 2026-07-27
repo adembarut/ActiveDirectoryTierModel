@@ -29,7 +29,10 @@ function Get-TierModelGpoLinkFd {
         [Parameter(Mandatory)]
         [string]$DomainController,
         
-        [switch]$Silent
+        [switch]$Silent,
+        
+        [Parameter()]
+        [string]$ParentOU
     )
     
     $CorrelationId = [System.Guid]::NewGuid().ToString()

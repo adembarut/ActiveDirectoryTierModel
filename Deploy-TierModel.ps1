@@ -104,7 +104,12 @@ param(
     [string]$LogPath,
     
     [Parameter()]
-    [string]$OutputFileBase
+    [string]$OutputFileBase,
+    
+    [Parameter()]
+    [string]$ParentOU,
+    
+    [switch]$Force
 )
 
 Set-StrictMode -Version Latest
@@ -180,8 +185,22 @@ Import-Module (Join-Path $PSScriptRoot 'Modules\TierModel\TierModel.psd1') -Forc
 
 Write-Host "TierModel module loaded successfully." -ForegroundColor Green
 
+# Auto-detect ParentOU if not explicitly specified
+if ([string]::IsNullOrWhiteSpace($ParentOU)) {
+    try {
+        $domainDN = Resolve-TierModelDomainDN -DomainController $PreferredDc
+        if ($domainDN) {
+            $candidateOu = "OU=_TierModel,$domainDN"
+            if (Get-ADOrganizationalUnit -Identity $candidateOu -Server $PreferredDc -ErrorAction SilentlyContinue) {
+                $ParentOU = "_TierModel"
+                Write-Host "Auto-detected ParentOU: '$ParentOU'" -ForegroundColor Green
+            }
+        }
+    } catch { }
+}
+
 # Confirmation prompt for ConfirmApply to prevent accidental execution
-if ($ConfirmApply) {
+if ($ConfirmApply -and -not $Force) {
     Write-Host ""
     Write-Host "WARNING: You are about to execute Active Directory changes!" -ForegroundColor Yellow
     Write-Host "These changes, while low risk, will modify your Active Directory environment." -ForegroundColor Yellow
@@ -281,7 +300,8 @@ function Invoke-OuDeployment {
         [Parameter(Mandatory)] [object]$Config,
         [Parameter(Mandatory)] [string]$DomainController,
         [switch]$Apply,
-        [switch]$Silent  # For FullDeployment - suppress progress output, return data only
+        [switch]$Silent,  # For FullDeployment - suppress progress output, return data only
+        [string]$ParentOU
     )
     
     if (-not $Silent) {
@@ -293,7 +313,7 @@ function Invoke-OuDeployment {
     }
     
     # Generate OU plan
-    $plan = Get-TierModelOu -Config $Config -DomainController $DomainController -IncludeDetails
+    $plan = Get-TierModelOu -Config $Config -DomainController $DomainController -IncludeDetails -ParentOU $ParentOU
     
     if ($Logging) {
         Write-TierModelLog -LogPath $script:LogFilePath -Level 'Info' -Message "OU plan generated - Total: $($plan.Summary.TotalInConfig), ToCreate: $($plan.Summary.ToCreate), Existing: $($plan.Summary.ExistingCount)"
@@ -429,7 +449,9 @@ function Invoke-GroupDeployment {
         [Parameter(Mandatory)] [object]$Config,
         [Parameter(Mandatory)] [string]$DomainController,
         [switch]$Apply,
-        [switch]$Silent  # For FullDeployment - suppress progress output, return data only
+        [switch]$Silent,  # For FullDeployment - suppress progress output, return data only
+        [string]$ParentOU,
+        [switch]$FullDeployment
     )
     
     if (-not $Silent) {
@@ -437,7 +459,11 @@ function Invoke-GroupDeployment {
     }
     
     # Generate deployment plan
-    $plan = Get-TierModelGroup -Config $Config -DomainController $DomainController -IncludeDetails
+    $plan = if ($FullDeployment) {
+        Get-TierModelGroupFd -Config $Config -DomainController $DomainController -IncludeDetails -ParentOU $ParentOU
+    } else {
+        Get-TierModelGroup -Config $Config -DomainController $DomainController -IncludeDetails -ParentOU $ParentOU
+    }
     
     if (-not $Silent) {
         Write-Host "Group Plan Summary:" -ForegroundColor White
@@ -570,8 +596,10 @@ function Invoke-UserDeployment {
     param(
         [Parameter(Mandatory)] [object]$Config,
         [Parameter(Mandatory)] [string]$DomainController,
-        [switch]$Apply,  # When true, execute changes; when false, plan only
-        [switch]$Silent  # For FullDeployment - suppress progress output, return data only
+        [switch]$Apply,
+        [switch]$Silent,  # For FullDeployment - suppress progress output, return data only
+        [string]$ParentOU,
+        [switch]$FullDeployment
     )
     
     if (-not $Silent) {
@@ -579,10 +607,12 @@ function Invoke-UserDeployment {
     }
     
     # Generate deployment plan
-    if ($Silent) {
-        $plan = Get-TierModelUser -Config $Config -DomainController $DomainController -Silent
+    $plan = if ($FullDeployment) {
+        Get-TierModelUserFd -Config $Config -DomainController $DomainController -ParentOU $ParentOU
+    } elseif ($Silent) {
+        Get-TierModelUser -Config $Config -DomainController $DomainController -Silent -ParentOU $ParentOU
     } else {
-        $plan = Get-TierModelUser -Config $Config -DomainController $DomainController
+        Get-TierModelUser -Config $Config -DomainController $DomainController -ParentOU $ParentOU
     }
     
     # Show deployment plan summary (only if not Silent)
@@ -690,7 +720,9 @@ function Invoke-OuAclDeployment {
         [Parameter(Mandatory)] [object]$Config,
         [Parameter(Mandatory)] [string]$DomainController,
         [switch]$Apply,  # When true, execute changes; when false, plan only
-        [switch]$Silent  # For FullDeployment - suppress progress output, return data only
+        [switch]$Silent,  # For FullDeployment - suppress progress output, return data only
+        [string]$ParentOU,
+        [switch]$FullDeployment
     )
     
     if (-not $Silent) {
@@ -706,7 +738,11 @@ function Invoke-OuAclDeployment {
     }
     
     # Generate deployment plan
-    $plan = Get-TierModelOuAcl -Config $Config -DomainController $DomainController
+    $plan = if ($FullDeployment) {
+        Get-TierModelOuAclFd -Config $Config -DomainController $DomainController -ParentOU $ParentOU
+    } else {
+        Get-TierModelOuAcl -Config $Config -DomainController $DomainController -ParentOU $ParentOU
+    }
     
     # Show deployment plan summary (only if not Silent)
     if (-not $Silent) {
@@ -816,7 +852,9 @@ function Invoke-GpoDeployment {
         [Parameter(Mandatory)] [object]$Config,
         [Parameter(Mandatory)] [string]$DomainController,
         [switch]$Apply,  # When true, execute changes; when false, plan only
-        [switch]$Silent  # For FullDeployment - suppress progress output, return data only
+        [switch]$Silent,  # For FullDeployment - suppress progress output, return data only
+        [string]$ParentOU,
+        [switch]$FullDeployment
     )
     
     if (-not $Silent) {
@@ -824,7 +862,11 @@ function Invoke-GpoDeployment {
     }
     
     # First, check for dependency errors with silent mode
-    $planCheck = Get-TierModelGpo -Config $Config -DomainController $DomainController -Silent
+    $planCheck = if ($FullDeployment) {
+        Get-TierModelGpoFd -Config $Config -DomainController $DomainController -Silent -ParentOU $ParentOU
+    } else {
+        Get-TierModelGpo -Config $Config -DomainController $DomainController -Silent -ParentOU $ParentOU
+    }
     
     # If there are dependency errors, generate plan again with silent mode and return early
     if ($planCheck.PSObject.Properties.Name -contains 'Errors' -and $planCheck.Errors -and $planCheck.Errors.Count -gt 0) {
@@ -853,7 +895,11 @@ function Invoke-GpoDeployment {
         Write-Host "" # Blank line before actions
         
         # Generate the visual GPO analysis output (the format you want to keep)
-        $null = Get-TierModelGpo -Config $Config -DomainController $DomainController
+        $null = if ($FullDeployment) {
+            Get-TierModelGpoFd -Config $Config -DomainController $DomainController -ParentOU $ParentOU
+        } else {
+            Get-TierModelGpo -Config $Config -DomainController $DomainController -ParentOU $ParentOU
+        }
         
         # Show warnings if present
         if ($plan.PSObject.Properties.Name -contains 'Warnings' -and $plan.Warnings -and $plan.Warnings.Count -gt 0) {
@@ -978,8 +1024,12 @@ function Invoke-GpoDeployment {
         $linkActions = @($plan.Actions | Where-Object { $_.Action -eq 'LinkGPO' })
         if ($linkActions.Count -gt 0) {
             if (-not $Silent) { Write-Host "  Phase 4: Linking GPOs to OUs..." -ForegroundColor Cyan }
-            $linkPlan = Get-TierModelGPOLink -Plan $plan -DomainController $DomainController
-            $linkResult = New-TierModelGPOLink -Plan $linkPlan -DomainController $DomainController
+            $linkPlan = if ($FullDeployment) {
+                Get-TierModelGpoLinkFd -Plan $plan -DomainController $DomainController -ParentOU $ParentOU
+            } else {
+                Get-TierModelGPOLink -Plan $plan -DomainController $DomainController -ParentOU $ParentOU
+            }
+            $linkResult = New-TierModelGPOLink -Plan $linkPlan -DomainController $DomainController -ParentOU $ParentOU
             $totalExecuted += $linkResult.Executed
             $totalFailed += $linkResult.Failed
             $totalSkipped += $linkResult.Skipped
@@ -1117,7 +1167,7 @@ if ($FullDeployment) {
     if (-not $ConfirmApply) {
         Write-Host "Phase 1: Analyzing OUs..." -ForegroundColor Cyan
     }
-    $ouResult = Get-TierModelOu -Config $config -DomainController $PreferredDc
+    $ouResult = Get-TierModelOu -Config $config -DomainController $PreferredDc -ParentOU $ParentOU
     
     if ($ouResult) {
         # Safely handle Actions property - ensure we always get an array
@@ -1181,7 +1231,7 @@ if ($FullDeployment) {
         . "$PSScriptRoot\modules\TierModel\public\Get-TierModelGroupFd.ps1"
     }
     
-    $groupResult = Get-TierModelGroupFd -Config $config -DomainController $PreferredDc
+    $groupResult = Get-TierModelGroupFd -Config $config -DomainController $PreferredDc -ParentOU $ParentOU
     
     if ($groupResult) {
         # Safely handle Actions property - ensure we always get an array
@@ -1245,7 +1295,7 @@ if ($FullDeployment) {
         . "$PSScriptRoot\modules\TierModel\public\Get-TierModelUserFd.ps1"
     }
     
-    $userResult = Get-TierModelUserFd -Config $config -DomainController $PreferredDc
+    $userResult = Get-TierModelUserFd -Config $config -DomainController $PreferredDc -ParentOU $ParentOU
     
     if ($userResult) {
         # Safely handle Actions property - ensure we always get an array
@@ -1326,9 +1376,9 @@ if ($FullDeployment) {
     }
     
     if ($ConfirmApply) {
-        $ouAclResult = Get-TierModelOuAclFd -Config $config -DomainController $PreferredDc -Silent
+        $ouAclResult = Get-TierModelOuAclFd -Config $config -DomainController $PreferredDc -Silent -ParentOU $ParentOU
     } else {
-        $ouAclResult = Get-TierModelOuAclFd -Config $config -DomainController $PreferredDc
+        $ouAclResult = Get-TierModelOuAclFd -Config $config -DomainController $PreferredDc -ParentOU $ParentOU
     }
     
     if ($ouAclResult) {
@@ -1391,9 +1441,9 @@ if ($FullDeployment) {
     
     # Use Silent mode when ConfirmApply to suppress detailed output
     if ($ConfirmApply) {
-        $gpoResult = Get-TierModelGpoFd -Config $config -DomainController $PreferredDc -Silent
+        $gpoResult = Get-TierModelGpoFd -Config $config -DomainController $PreferredDc -Silent -ParentOU $ParentOU
     } else {
-        $gpoResult = Get-TierModelGpoFd -Config $config -DomainController $PreferredDc
+        $gpoResult = Get-TierModelGpoFd -Config $config -DomainController $PreferredDc -ParentOU $ParentOU
     }
     
     if ($gpoResult) {
@@ -1409,9 +1459,9 @@ if ($FullDeployment) {
         
         # Get corrected link analysis from dedicated link function
         if ($ConfirmApply) {
-            $gpoLinkResult = Get-TierModelGpoLinkFd -Plan $gpoResult -DomainController $PreferredDc -Silent
+            $gpoLinkResult = Get-TierModelGpoLinkFd -Plan $gpoResult -DomainController $PreferredDc -Silent -ParentOU $ParentOU
         } else {
-            $gpoLinkResult = Get-TierModelGpoLinkFd -Plan $gpoResult -DomainController $PreferredDc
+            $gpoLinkResult = Get-TierModelGpoLinkFd -Plan $gpoResult -DomainController $PreferredDc -ParentOU $ParentOU
         }
         $correctedLinkCount = if ($gpoLinkResult -and $gpoLinkResult.Actions) { @($gpoLinkResult.Actions).Count } else { 0 }
         
@@ -1538,6 +1588,7 @@ if ($FullDeployment) {
                 Config = $config
                 DomainController = $PreferredDc
                 IncludeDetails = $true
+                ParentOU = $ParentOU
             }
             if ($ConfirmApply) { $msaFdPlanParams['Silent'] = $true }
             $msaFdPlan = Get-TierModelMsaAclFd @msaFdPlanParams
@@ -1569,6 +1620,7 @@ if ($FullDeployment) {
                 Config = $config
                 DomainController = $PreferredDc
                 IncludeDetails = $true
+                ParentOU = $ParentOU
             }
             if ($ConfirmApply) { $gmsaFdPlanParams['Silent'] = $true }
             $gmsaFdPlan = Get-TierModelGmsaAclFd @gmsaFdPlanParams
@@ -1600,6 +1652,7 @@ if ($FullDeployment) {
                 Config = $config
                 DomainController = $PreferredDc
                 IncludeDetails = $true
+                ParentOU = $ParentOU
             }
             if ($ConfirmApply) { $dmsaFdPlanParams['Silent'] = $true }
             $dmsaFdPlan = Get-TierModelDmsaAclFd @dmsaFdPlanParams
@@ -1631,6 +1684,7 @@ if ($FullDeployment) {
                 Config = $config
                 DomainController = $PreferredDc
                 IncludeDetails = $true
+                ParentOU = $ParentOU
             }
             if ($ConfirmApply) { $winLapsFdPlanParams['Silent'] = $true }
             $winLapsFdPlan = Get-TierModelWinLapsAclFd @winLapsFdPlanParams
@@ -1682,43 +1736,32 @@ if ($FullDeployment) {
         Write-Host "`nApplying Full Deployment changes..." -ForegroundColor Cyan
         
         # Execute Phase 1: OUs
-        if ($deploymentPlan.Phases | Where-Object { $_.Phase -eq 1 -and $_.ActionCount -gt 0 }) {
-            Write-Host "Phase 1: Creating OUs..." -ForegroundColor Cyan
-            $ouExecutionResult = Invoke-OuDeployment -Config $config -DomainController $PreferredDc -Apply -Silent
-            Write-Host "" # Blank line for readability
-        }
+        Write-Host "Phase 1: Creating OUs..." -ForegroundColor Cyan
+        $ouExecutionResult = Invoke-OuDeployment -Config $config -DomainController $PreferredDc -Apply -Silent -ParentOU $ParentOU
+        Write-Host "" # Blank line for readability
         
         # Execute Phase 2: Groups
-        if ($deploymentPlan.Phases | Where-Object { $_.Phase -eq 2 -and $_.ActionCount -gt 0 }) {
-            Write-Host "Phase 2: Creating Groups..." -ForegroundColor Cyan
-            $groupExecutionResult = Invoke-GroupDeployment -Config $config -DomainController $PreferredDc -Apply -Silent
-            Write-Host "" # Blank line for readability
-        }
+        Write-Host "Phase 2: Creating Groups..." -ForegroundColor Cyan
+        $groupExecutionResult = Invoke-GroupDeployment -Config $config -DomainController $PreferredDc -Apply -Silent -ParentOU $ParentOU -FullDeployment
+        Write-Host "" # Blank line for readability
         
         # Execute Phase 3: Users
-        if ($deploymentPlan.Phases | Where-Object { $_.Phase -eq 3 -and $_.ActionCount -gt 0 }) {
-            Write-Host "Phase 3: Creating Users..." -ForegroundColor Cyan
-            $userExecutionResult = Invoke-UserDeployment -Config $config -DomainController $PreferredDc -Apply -Silent
-            Write-Host "" # Blank line for readability
-        }
+        Write-Host "Phase 3: Creating Users..." -ForegroundColor Cyan
+        $userExecutionResult = Invoke-UserDeployment -Config $config -DomainController $PreferredDc -Apply -Silent -ParentOU $ParentOU -FullDeployment
+        Write-Host "" # Blank line for readability
         
         # Execute Phase 4: OU ACLs
-        if ($deploymentPlan.Phases | Where-Object { $_.Phase -eq 4 -and $_.ActionCount -gt 0 }) {
-            Write-Host "Phase 4: Configuring OU ACLs..." -ForegroundColor Cyan
-            $ouAclExecutionResult = Invoke-OuAclDeployment -Config $config -DomainController $PreferredDc -Apply -Silent
-            Write-Host "" # Blank line for readability
-        }
+        Write-Host "Phase 4: Configuring OU ACLs..." -ForegroundColor Cyan
+        $ouAclExecutionResult = Invoke-OuAclDeployment -Config $config -DomainController $PreferredDc -Apply -Silent -ParentOU $ParentOU -FullDeployment
+        Write-Host "" # Blank line for readability
         
         # Execute Phase 5: GPOs
-        if ($deploymentPlan.Phases | Where-Object { $_.Phase -eq 5 -and $_.ActionCount -gt 0 }) {
-            Write-Host "Phase 5: Deploying GPOs..." -ForegroundColor Cyan
-            $gpoExecutionResult = Invoke-GpoDeployment -Config $config -DomainController $PreferredDc -Apply -Silent
-            Write-Host "" # Blank line for readability
-        }
+        Write-Host "Phase 5: Deploying GPOs..." -ForegroundColor Cyan
+        $gpoExecutionResult = Invoke-GpoDeployment -Config $config -DomainController $PreferredDc -Apply -Silent -ParentOU $ParentOU -FullDeployment
+        Write-Host "" # Blank line for readability
         
         # Execute Phase 6: ADMX
-        if ($deploymentPlan.Phases | Where-Object { $_.Phase -eq 6 -and $_.ActionCount -gt 0 }) {
-            Write-Host "Phase 6: Importing ADMX templates..." -ForegroundColor Cyan
+        Write-Host "Phase 6: Importing ADMX templates..." -ForegroundColor Cyan
             $phaseResult = ($deploymentPlan.Phases | Where-Object { $_.Phase -eq 6 }).Result
             
             # Use the proper Copy-TierModelAdmx function with the pre-computed analysis
@@ -1751,9 +1794,7 @@ if ($FullDeployment) {
                 Write-Host "  ❌ ADMX deployment failed: $($_.Exception.Message)" -ForegroundColor Red
                 Write-Warning "Failed to deploy ADMX templates: $($_.Exception.Message)"
             }
-            
             Write-Host "" # Blank line for readability
-        }
         
         Write-Host "Full deployment execution completed." -ForegroundColor Green
         
@@ -1771,21 +1812,11 @@ if ($FullDeployment) {
         if ($activeIncludeCount -gt 0 -and -not $standardDeployHadErrors) {
             Write-Host "`n=== Optional Features: MSA/gMSA/dMSA/WinLaps ACL Delegations ===" -ForegroundColor Magenta
             
-            # Pass Include switches to prerequisites
-            $prereqSplat = @{ PreferredDc = $PreferredDc }
-            if ($IncludeMsa) { $prereqSplat['IncludeMsa'] = $true }
-            if ($IncludeGmsa) { $prereqSplat['IncludeGmsa'] = $true }
-            if ($IncludeDmsa) { $prereqSplat['IncludeDmsa'] = $true }
-            if ($IncludeWinLaps) { $prereqSplat['IncludeWinLaps'] = $true }
-            $msaPrereqs = Test-TierModelPrerequisites @prereqSplat
-            
-            if (-not $msaPrereqs.Valid) {
-                Write-Host "  ❌ MSA/gMSA/dMSA/WinLaps prerequisites failed:" -ForegroundColor Red
-                $msaPrereqs.Errors | ForEach-Object { Write-Host "    - $_" -ForegroundColor Red }
-            } else {
-                if ($IncludeMsa) {
+            if ($IncludeMsa) {
+                $msaCheck = Test-TierModelPrerequisites -PreferredDc $PreferredDc -IncludeMsa
+                if ($msaCheck.Valid) {
                     Write-Host "  Deploying MSA ACL delegations..." -ForegroundColor Cyan
-                    $msaPlan = if (Get-Variable msaFdPlan -ErrorAction SilentlyContinue) { $msaFdPlan } else { Get-TierModelMsaAclFd -Config $config -DomainController $PreferredDc -IncludeDetails -Silent }
+                    $msaPlan = Get-TierModelMsaAclFd -Config $config -DomainController $PreferredDc -IncludeDetails -Silent -ParentOU $ParentOU
                     if ($msaPlan.Errors -and $msaPlan.Errors.Count -gt 0) {
                         Write-Host "  ❌ MSA planning errors:" -ForegroundColor Red
                         $msaPlan.Errors | ForEach-Object { Write-Host "    - $($_.Message)" -ForegroundColor Red }
@@ -1794,10 +1825,15 @@ if ($FullDeployment) {
                     } else {
                         Write-Host "  ✅ MSA ACL delegations already up to date" -ForegroundColor Green
                     }
+                } else {
+                    Write-Host "  ⚠️ Skipping MSA ACL delegations: $($msaCheck.Errors -join '; ')" -ForegroundColor Yellow
                 }
-                if ($IncludeGmsa) {
+            }
+            if ($IncludeGmsa) {
+                $gmsaCheck = Test-TierModelPrerequisites -PreferredDc $PreferredDc -IncludeGmsa
+                if ($gmsaCheck.Valid) {
                     Write-Host "  Deploying gMSA ACL delegations..." -ForegroundColor Cyan
-                    $gmsaPlan = if (Get-Variable gmsaFdPlan -ErrorAction SilentlyContinue) { $gmsaFdPlan } else { Get-TierModelGmsaAclFd -Config $config -DomainController $PreferredDc -IncludeDetails -Silent }
+                    $gmsaPlan = Get-TierModelGmsaAclFd -Config $config -DomainController $PreferredDc -IncludeDetails -Silent -ParentOU $ParentOU
                     if ($gmsaPlan.Errors -and $gmsaPlan.Errors.Count -gt 0) {
                         Write-Host "  ❌ gMSA planning errors:" -ForegroundColor Red
                         $gmsaPlan.Errors | ForEach-Object { Write-Host "    - $($_.Message)" -ForegroundColor Red }
@@ -1806,10 +1842,15 @@ if ($FullDeployment) {
                     } else {
                         Write-Host "  ✅ gMSA ACL delegations already up to date" -ForegroundColor Green
                     }
+                } else {
+                    Write-Host "  ⚠️ Skipping gMSA ACL delegations: $($gmsaCheck.Errors -join '; ')" -ForegroundColor Yellow
                 }
-                if ($IncludeDmsa) {
+            }
+            if ($IncludeDmsa) {
+                $dmsaCheck = Test-TierModelPrerequisites -PreferredDc $PreferredDc -IncludeDmsa
+                if ($dmsaCheck.Valid) {
                     Write-Host "  Deploying dMSA ACL delegations..." -ForegroundColor Cyan
-                    $dmsaPlan = if (Get-Variable dmsaFdPlan -ErrorAction SilentlyContinue) { $dmsaFdPlan } else { Get-TierModelDmsaAclFd -Config $config -DomainController $PreferredDc -IncludeDetails -Silent }
+                    $dmsaPlan = Get-TierModelDmsaAclFd -Config $config -DomainController $PreferredDc -IncludeDetails -Silent -ParentOU $ParentOU
                     if ($dmsaPlan.Errors -and $dmsaPlan.Errors.Count -gt 0) {
                         Write-Host "  ❌ dMSA planning errors:" -ForegroundColor Red
                         $dmsaPlan.Errors | ForEach-Object { Write-Host "    - $($_.Message)" -ForegroundColor Red }
@@ -1818,19 +1859,26 @@ if ($FullDeployment) {
                     } else {
                         Write-Host "  ✅ dMSA ACL delegations already up to date" -ForegroundColor Green
                     }
+                } else {
+                    Write-Host "  ⚠️ Skipping dMSA ACL delegations (requires Windows Server 2025 schema)" -ForegroundColor Yellow
                 }
-                if ($IncludeWinLaps) {
-                    Write-Host "  Deploying Windows LAPS ACL delegations..." -ForegroundColor Cyan
-                    # Always regenerate plan fresh at execution time — groups now exist after Phase 2
-                    $winLapsPlan = Get-TierModelWinLapsAclFd -Config $config -DomainController $PreferredDc -IncludeDetails -Silent
-                    if ($winLapsPlan.Errors -and $winLapsPlan.Errors.Count -gt 0) {
+            }
+            if ($IncludeWinLaps) {
+                Write-Host "  Deploying Windows LAPS ACL & Decryptor delegations..." -ForegroundColor Cyan
+                # Always regenerate plan fresh at execution time — groups now exist after Phase 2
+                $winLapsPlan = Get-TierModelWinLapsAclFd -Config $config -DomainController $PreferredDc -IncludeDetails -Silent -ParentOU $ParentOU
+                if ($winLapsPlan.Errors -and $winLapsPlan.Errors.Count -gt 0) {
+                    # If errors are only about missing schema extensions, filter out schema error so Decryptor actions still run
+                    $nonSchemaErrors = @($winLapsPlan.Errors | Where-Object { $_.Message -notmatch 'schema' })
+                    if ($nonSchemaErrors.Count -gt 0) {
                         Write-Host "  ❌ Windows LAPS planning errors:" -ForegroundColor Red
-                        $winLapsPlan.Errors | ForEach-Object { Write-Host "    - $($_.Message)" -ForegroundColor Red }
-                    } elseif (@($winLapsPlan.Actions).Count -gt 0) {
-                        $winLapsExecResult = New-TierModelWinLapsAcl -Plan $winLapsPlan -DomainController $PreferredDc -Config $config
-                    } else {
-                        Write-Host "  ✅ Windows LAPS ACL delegations already up to date" -ForegroundColor Green
+                        $nonSchemaErrors | ForEach-Object { Write-Host "    - $($_.Message)" -ForegroundColor Red }
                     }
+                }
+                if (@($winLapsPlan.Actions).Count -gt 0) {
+                    $winLapsExecResult = New-TierModelWinLapsAcl -Plan $winLapsPlan -DomainController $PreferredDc -Config $config
+                } else {
+                    Write-Host "  ✅ Windows LAPS ACL delegations already up to date" -ForegroundColor Green
                 }
             }
         } elseif ($activeIncludeCount -gt 0 -and $standardDeployHadErrors) {
@@ -1923,7 +1971,7 @@ else {
         if ($Logging) {
             Write-TierModelLog -LogPath $script:LogFilePath -Level 'Info' -Message "Starting OU-Only deployment"
         }
-        $ouResult = Invoke-OuDeployment -Config $config -DomainController $PreferredDc -Apply:$ConfirmApply
+        $ouResult = Invoke-OuDeployment -Config $config -DomainController $PreferredDc -Apply:$ConfirmApply -ParentOU $ParentOU
         
         # Show deployment plan summary for OU-only operations
         if ($ouResult) {
@@ -1973,7 +2021,7 @@ else {
         if ($Logging) {
             Write-TierModelLog -LogPath $script:LogFilePath -Level 'Info' -Message "Starting Groups-Only deployment"
         }
-        $groupResult = Invoke-GroupDeployment -Config $config -DomainController $PreferredDc -Apply:$ConfirmApply
+        $groupResult = Invoke-GroupDeployment -Config $config -DomainController $PreferredDc -Apply:$ConfirmApply -ParentOU $ParentOU
         
         # Show deployment plan summary for Groups-only operations
         if ($groupResult) {
@@ -2024,6 +2072,7 @@ else {
             DomainController = $PreferredDc
             Apply = $ConfirmApply
             Silent = $true  # Suppress existence messages for UserOnly operations
+            ParentOU = $ParentOU
         }
         $userResult = Invoke-UserDeployment @userParams
         
@@ -2083,6 +2132,7 @@ else {
             Config = $config
             DomainController = $PreferredDc
             Apply = $ConfirmApply
+            ParentOU = $ParentOU
         }
         $ouAclResult = Invoke-OuAclDeployment @ouAclParams
         
@@ -2142,6 +2192,7 @@ else {
             Config = $config
             DomainController = $PreferredDc
             Apply = $ConfirmApply
+            ParentOU = $ParentOU
         }
         $gpoResult = Invoke-GpoDeployment @gpoParams
         

@@ -16,6 +16,7 @@
         'Get-TierModel',
         'Get-TierModelAdmx',
         'Get-TierModelConfig',
+        'Get-TierModelConditionalGroupNames',
         'Get-TierModelGpo',
         'Get-TierModelGpoFd',
         'Get-TierModelGPOLink',

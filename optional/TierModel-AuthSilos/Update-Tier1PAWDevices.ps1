@@ -4,7 +4,10 @@ Param (
     [String]$TieredComputerGroupName  = "Tier1PAWDevices",
 
     [Parameter(Mandatory=$false)]
-    [string]$TieredComputerOU = "OU=Tier 1 PAW Devices,OU=Tier 1,OU=Tier Model Administration",
+    [string]$ParentOU = "_TierModel",
+
+    [Parameter(Mandatory=$false)]
+    [string]$TieredComputerOU = "OU=Tier 1 PAW Devices,OU=Tier 1,OU=Tier Model Administration,OU=$ParentOU",
 
     [Parameter (Mandatory=$false)]
     [bool]$MultiDomainForest = $false

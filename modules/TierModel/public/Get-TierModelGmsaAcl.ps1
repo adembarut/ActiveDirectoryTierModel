@@ -28,7 +28,10 @@ function Get-TierModelGmsaAcl {
         [Parameter(Mandatory)]
         [string]$DomainController,
         
-        [switch]$IncludeDetails
+        [switch]$IncludeDetails,
+        
+        [Parameter()]
+        [string]$ParentOU
     )
     
     $CorrelationId = [System.Guid]::NewGuid().ToString()
@@ -111,7 +114,7 @@ function Get-TierModelGmsaAcl {
         }
         
         $uniqueOUs = $delegations | ForEach-Object {
-            Resolve-TierModelPlaceholder -Path $_.targetOUPath -DomainDN $domainDN
+            Resolve-TierModelPlaceholder -Path $_.targetOUPath -DomainDN $domainDN -ParentOU $ParentOU
         } | Select-Object -Unique
         
         foreach ($ouPath in $uniqueOUs) {
@@ -169,7 +172,7 @@ function Get-TierModelGmsaAcl {
         
         foreach ($acl in $delegations) {
             try {
-                $targetOUPath = Resolve-TierModelPlaceholder -Path $acl.targetOUPath -DomainDN $domainDN
+                $targetOUPath = Resolve-TierModelPlaceholder -Path $acl.targetOUPath -DomainDN $domainDN -ParentOU $ParentOU
                 $resolvedObjectType = & $resolveAclGuid $acl.objecttype
                 $identityReference = $acl.identityreference
                 $objectTypeGuid = if ([string]::IsNullOrEmpty($resolvedObjectType)) {

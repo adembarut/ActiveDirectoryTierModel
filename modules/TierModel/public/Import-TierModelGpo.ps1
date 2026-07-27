@@ -84,8 +84,8 @@ function Import-TierModelGpo {
                             Write-Host "  ✅ Imported settings into GPO: $gpoName" -ForegroundColor Green
                             $executed++
                         } else {
-                            $errorMsg = "Import path not found: $importPath"
-                            Write-Host "    ERROR: $errorMsg" -ForegroundColor Red
+                            $errorMsg = "Import path not found ($importPath) for GPO '$gpoName'"
+                            Write-Host "  ❌ ERROR: $errorMsg" -ForegroundColor Red
                             
                             Write-TierModelLog -Level Error -Message "Failed to import GPO" -Data @{
                                 GPOName = $gpoName
@@ -98,7 +98,7 @@ function Import-TierModelGpo {
                             $converged = $false
                         }
                     } else {
-                        Write-Host "    Skipping import - no importPath specified" -ForegroundColor Yellow
+                        Write-Host "  ⚠️  Skipping import for GPO '$gpoName' - no importPath specified" -ForegroundColor Yellow
                         $skipped++
                     }
                     

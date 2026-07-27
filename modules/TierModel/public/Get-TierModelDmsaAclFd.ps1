@@ -19,7 +19,10 @@ function Get-TierModelDmsaAclFd {
         
         [switch]$IncludeDetails,
         
-        [switch]$Silent
+        [switch]$Silent,
+        
+        [Parameter()]
+        [string]$ParentOU
     )
     
     $CorrelationId = if (Get-Variable -Name 'script:CorrelationId' -ErrorAction SilentlyContinue) { $script:CorrelationId } else { [System.Guid]::NewGuid().ToString() }
@@ -28,6 +31,7 @@ function Get-TierModelDmsaAclFd {
     Write-TierModelLog -Level Info -Message "DmsaAclFdPlanningStart" -Data @{
         DomainController = $DomainController
         CorrelationId = $CorrelationId
+        ParentOU = $ParentOU
     } | Out-Null
     
     try {
@@ -70,10 +74,20 @@ function Get-TierModelDmsaAclFd {
         }
         
         $delegations = @($Config.dmsaAclDelegations)
-        $dmsaGuid = Resolve-DomainSpecificGuid -AttributeName 'msDS-DelegatedManagedServiceAccount' -SchemaObjectClass 'classSchema' -DomainController $DomainController
+        $dmsaGuid = try { Resolve-DomainSpecificGuid -AttributeName 'msDS-DelegatedManagedServiceAccount' -SchemaObjectClass 'classSchema' -DomainController $DomainController -ErrorAction SilentlyContinue } catch { $null }
         $parsedDmsaGuid = [Guid]::Empty
         if ([string]::IsNullOrEmpty([string]$dmsaGuid) -or -not [Guid]::TryParse([string]$dmsaGuid, [ref]$parsedDmsaGuid) -or $parsedDmsaGuid -eq [Guid]::Empty) {
-            throw "Failed to resolve domain-specific GUID for 'msDS-DelegatedManagedServiceAccount'."
+            Write-Host "  ⚠️  dMSA schema attribute 'msDS-DelegatedManagedServiceAccount' not found in Active Directory. Skipping dMSA ACL delegations." -ForegroundColor Yellow
+            $warnings += "dMSA schema attribute 'msDS-DelegatedManagedServiceAccount' not found in Active Directory schema."
+            return [PSCustomObject]@{
+                Actions = @()
+                Summary = @{ TotalActions = 0; CreateActions = 0; ExistingCount = 0; RiskAssessment = @{ LowRisk = 0; MediumRisk = 0; HighRisk = 0 } }
+                Analysis = @{ ConfiguredAcls = 0; ExistingAcls = 0; ValidationErrors = 0 }
+                Errors = @()
+                Warnings = $warnings
+                DurationMs = ((Get-Date) - $startTime).TotalMilliseconds
+                CorrelationId = $CorrelationId
+            }
         }
         
         Write-TierModelLog -Level Info -Message "Analyzing dMSA ACL delegations (Full Deployment)" -Data @{
@@ -114,7 +128,7 @@ function Get-TierModelDmsaAclFd {
         
         foreach ($acl in $delegations) {
             try {
-                $targetOUPath = Resolve-TierModelPlaceholder -Path $acl.targetOUPath -DomainDN $domainDN
+                $targetOUPath = Resolve-TierModelPlaceholder -Path $acl.targetOUPath -DomainDN $domainDN -ParentOU $ParentOU
                 $resolvedObjectType = & $resolveAclGuid $acl.objecttype
                 $identityReference = $acl.identityreference
                 $objectTypeGuid = if ([string]::IsNullOrEmpty($resolvedObjectType)) { [Guid]::Empty } else { [Guid]$resolvedObjectType }
