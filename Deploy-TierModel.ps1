@@ -2400,8 +2400,8 @@ else {
     }
 }
 
-# === Standalone -Include* Mode (no scope parameter) ===
-if ($activeScopeCount -eq 0 -and $activeIncludeCount -gt 0) {
+# === Include* Mode (standalone or combined with -FullDeployment) ===
+if (($activeScopeCount -eq 0 -and $activeIncludeCount -gt 0) -or ($FullDeployment -and $activeIncludeCount -gt 0)) {
     Write-Host "`n=== Standalone MSA/gMSA/dMSA/WinLaps ACL Deployment ===" -ForegroundColor Magenta
     
     # Load config
@@ -2600,7 +2600,7 @@ if ($activeScopeCount -eq 0 -and $activeIncludeCount -gt 0) {
                     Write-Host "  Importing & Linking '*- Tier 0 DCs Authentication Silo' GPO..." -ForegroundColor Yellow
                     $gpoBackupPath = Join-Path $PSScriptRoot "optional\TierModel-AuthSilos\ScheduleTask-GPO"
                     if (Test-Path $gpoBackupPath) {
-                        $importedGpo = Import-GPO -BackupGpoName "*- Tier 0 DCs Authentication Silo" -Path $gpoBackupPath -TargetName "*- Tier 0 DCs Authentication Silo" -CreateIfNeeded -Server $PreferredDc
+                        $importedGpo = Import-GPO -BackupId "36E1E245-5B6E-4EDE-AB40-9A9CE7ABD676" -Path $gpoBackupPath -TargetName "*- Tier 0 DCs Authentication Silo" -CreateIfNeeded -Server $PreferredDc
                         $domainDN = (Get-ADDomain -Server $PreferredDc).DistinguishedName
                         $dcOU = "OU=Domain Controllers,$domainDN"
                         New-GPLink -Name "*- Tier 0 DCs Authentication Silo" -Target $dcOU -LinkEnabled Yes -Server $PreferredDc -ErrorAction SilentlyContinue | Out-Null

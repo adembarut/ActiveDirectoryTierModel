@@ -147,7 +147,7 @@ Foreach ($OU in $aryTier0Computer){
                 Write-Log "Missing the Tier 0 computer OU $OU,$((Get-ADDomain -Server $domain).DistinguishedName)" -Severity Warning
                 Write-EventLog -LogName "Application" -source "Application" -EventId 0 -EntryType Error -Message "Missing the Tier 0 computer OU $OU,$((Get-ADDomain -Server $domain).DistinguishedName)"
             } else{
-                $T0computers = Get-ADObject -Filter {ObjectClass -eq "Computer"} -SearchBase "$OU,$((Get-ADDomain -Server $domain).DistinguishedName)" -Properties ObjectSid -SearchScope Subtree -Server $domain
+                $T0computers = @(Get-ADObject -Filter {ObjectClass -eq "Computer"} -SearchBase "$OU,$((Get-ADDomain -Server $domain).DistinguishedName)" -Properties ObjectSid -SearchScope Subtree -Server $domain)
                 #validate the computer ain the Tier 0 OU are member of the tier 0 computers group
                 Write-Log -Message "Found $($T0computers.Count) Tier 0 computers in $domain" -Severity Debug
                 Foreach ($T0Computer in $T0computers){
