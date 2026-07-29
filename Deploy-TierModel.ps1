@@ -158,6 +158,14 @@ elseif ($activeIncludeCount -gt 0 -and $activeScopeCount -eq 1 -and -not $FullDe
 Write-Host "Deploy TierModel orchestration starting." -ForegroundColor Cyan
 Write-Host "Preferred DC: $PreferredDc" -ForegroundColor DarkCyan
 
+# Ensure AD: PSDrive is mounted for ActiveDirectory provider
+Import-Module ActiveDirectory -ErrorAction SilentlyContinue
+if (-not (Get-PSDrive -Name AD -ErrorAction SilentlyContinue)) {
+    try {
+        New-PSDrive -Name AD -PSProvider ActiveDirectoryProvider -Server $PreferredDc -Scope Global -ErrorAction SilentlyContinue | Out-Null
+    } catch { }
+}
+
 # Validate logging parameters and prompt if needed
 if ($Logging -and -not $OutputFileBase) {
     $OutputFileBase = Read-Host "Enter base filename for logs (timestamp and extension will be added automatically)"
@@ -1905,6 +1913,84 @@ if ($FullDeployment) {
                     Write-Host "  ✅ Windows LAPS ACL delegations already up to date" -ForegroundColor Green
                 }
             }
+
+            if ($IncludeAuthSilo) {
+                Write-Host "  Deploying Kerberos Authentication Policy Silos & SYSVOL automation..." -ForegroundColor Cyan
+                try {
+                    # 1. Deploy AuthSilo Scripts to SYSVOL Central Secure Repository
+                    Write-Host "  Copying AuthSilo scripts to SYSVOL central secure repository..." -ForegroundColor Yellow
+                    $adDomainRoot = (Get-ADDomain -Server $PreferredDc).DNSRoot
+                    $sysvolScriptsDir = "\\$PreferredDc\SYSVOL\$adDomainRoot\scripts\TierModelAuthSilos"
+                    $sysvolLocalDir = Join-Path $env:SystemRoot "SYSVOL\sysvol\$adDomainRoot\scripts\TierModelAuthSilos"
+                    if (-not (Test-Path $sysvolScriptsDir)) {
+                        New-Item -ItemType Directory -Path $sysvolScriptsDir -Force | Out-Null
+                    }
+                    $siloSourceDir = Join-Path $PSScriptRoot "optional\TierModel-AuthSilos"
+                    if (Test-Path $siloSourceDir) {
+                        Get-ChildItem -Path $siloSourceDir -Filter "*.ps1" | ForEach-Object {
+                            Copy-Item -Path $_.FullName -Destination $sysvolScriptsDir -Force
+                        }
+                        if (Test-Path $sysvolLocalDir) {
+                            Get-ChildItem -Path $sysvolLocalDir -Filter "*.ps1" | Unblock-File -ErrorAction SilentlyContinue
+                        }
+                        Write-Host "  ✅ AuthSilo scripts deployed to SYSVOL: $sysvolScriptsDir" -ForegroundColor Green
+                    }
+
+                    $execDir = if (Test-Path $sysvolLocalDir) { $sysvolLocalDir } else { $sysvolScriptsDir }
+
+                    if (-not $ConfirmApply) {
+                        Write-Host "  [WhatIf] Deploy Kerberos AuthSilos & TGT 240m policies" -ForegroundColor Yellow
+                        Write-Host "  [WhatIf] Sync Tier 0 & Tier 1 users to AuthSilo (with BreakGlass & Group Exclusions)" -ForegroundColor Yellow
+                        Write-Host "  [WhatIf] Sync Tier 0 & Tier 1 Member Servers and PAW Devices to AuthSilo groups" -ForegroundColor Yellow
+                        if ($AuthSiloTaskMode -in @('GPO', 'Both')) {
+                            Write-Host "  [WhatIf] Import and link '*- Tier 0 DCs Authentication Silo' GPO (Disabled) to Domain Controllers OU" -ForegroundColor Yellow
+                        }
+                    } else {
+                        # 2. Deploy AuthSilo Policies
+                        Write-Host "  Deploying Kerberos AuthSilo Policies..." -ForegroundColor Yellow
+                        $siloDeployPath = Join-Path $execDir "Deploy-TierModelAuthSilo.ps1"
+                        if (-not (Test-Path $siloDeployPath)) { $siloDeployPath = Join-Path $PSScriptRoot "optional\TierModel-AuthSilos\Deploy-TierModelAuthSilo.ps1" }
+                        if (Test-Path $siloDeployPath) {
+                            & $siloDeployPath -PreferredDC $PreferredDc
+                        }
+                        
+                        # 3. Sync Users
+                        Write-Host "  Syncing Tier 0 & Tier 1 AuthSilo Users..." -ForegroundColor Yellow
+                        $u0Path = Join-Path $execDir "Update-Tier0AuthSiloUsers.ps1"
+                        $u1Path = Join-Path $execDir "Update-Tier1AuthSiloUsers.ps1"
+                        if (-not (Test-Path $u0Path)) { $u0Path = Join-Path $PSScriptRoot "optional\TierModel-AuthSilos\Update-Tier0AuthSiloUsers.ps1" }
+                        if (-not (Test-Path $u1Path)) { $u1Path = Join-Path $PSScriptRoot "optional\TierModel-AuthSilos\Update-Tier1AuthSiloUsers.ps1" }
+                        if (Test-Path $u0Path) { & $u0Path -ParentOU $ParentOU -ExcludeGroupName "Tier 0 AuthSilo Excluded Accounts" -ExcludeTieredUser "svc-pawdomainjoin,BreakGlassAdmin" }
+                        if (Test-Path $u1Path) { & $u1Path -ParentOU $ParentOU -ExcludeGroupName "Tier 1 AuthSilo Excluded Accounts" -ExcludeTieredUser "svc-t1srvdomainjoin" }
+                        
+                        # 4. Sync Computers
+                        Write-Host "  Syncing Tier 0 & Tier 1 Computers & PAW Devices..." -ForegroundColor Yellow
+                        $ms0Path = Join-Path $execDir "Update-Tier0MemberServers.ps1"
+                        $paw0Path = Join-Path $execDir "Update-Tier0PAWDevices.ps1"
+                        $ms1Path = Join-Path $execDir "Update-Tier1MemberServers.ps1"
+                        $paw1Path = Join-Path $execDir "Update-Tier1PAWDevices.ps1"
+                        if (Test-Path $ms0Path) { & $ms0Path -ParentOU $ParentOU }
+                        if (Test-Path $paw0Path) { & $paw0Path -ParentOU $ParentOU }
+                        if (Test-Path $ms1Path) { & $ms1Path -ParentOU $ParentOU }
+                        if (Test-Path $paw1Path) { & $paw1Path -ParentOU $ParentOU }
+
+                        # 5. GPO vs LocalTask Mode
+                        if ($AuthSiloTaskMode -in @('GPO', 'Both')) {
+                            Write-Host "  Importing & Linking '*- Tier 0 DCs Authentication Silo' GPO..." -ForegroundColor Yellow
+                            $gpoBackupPath = Join-Path $PSScriptRoot "optional\TierModel-AuthSilos\ScheduleTask-GPO"
+                            if (Test-Path $gpoBackupPath) {
+                                $importedGpo = Import-GPO -BackupId "36E1E245-5B6E-4EDE-AB40-9A9CE7ABD676" -Path $gpoBackupPath -TargetName "*- Tier 0 DCs Authentication Silo" -CreateIfNeeded -Server $PreferredDc
+                                $domainDN = (Get-ADDomain -Server $PreferredDc).DistinguishedName
+                                $dcOU = "OU=Domain Controllers,$domainDN"
+                                New-GPLink -Name "*- Tier 0 DCs Authentication Silo" -Target $dcOU -LinkEnabled No -Server $PreferredDc -ErrorAction SilentlyContinue | Out-Null
+                                Write-Host "  ✅ AuthSilo GPO imported and linked (Disabled / LinkEnabled=No) to Domain Controllers OU" -ForegroundColor Green
+                            }
+                        }
+                    }
+                } catch {
+                    Write-Host "  ❌ AuthSilo deployment error: $($_.Exception.Message)" -ForegroundColor Red
+                }
+            }
         } elseif ($activeIncludeCount -gt 0 -and $standardDeployHadErrors) {
             Write-Host "`n⚠️  Skipping optional MSA/gMSA/dMSA/WinLaps features due to errors in standard deployment." -ForegroundColor Yellow
         }
@@ -2400,8 +2486,8 @@ else {
     }
 }
 
-# === Include* Mode (standalone or combined with -FullDeployment) ===
-if (($activeScopeCount -eq 0 -and $activeIncludeCount -gt 0) -or ($FullDeployment -and $activeIncludeCount -gt 0)) {
+# === Standalone -Include* Mode (only when -FullDeployment is omitted) ===
+if ($activeScopeCount -eq 0 -and $activeIncludeCount -gt 0) {
     Write-Host "`n=== Standalone MSA/gMSA/dMSA/WinLaps ACL Deployment ===" -ForegroundColor Magenta
     
     # Load config

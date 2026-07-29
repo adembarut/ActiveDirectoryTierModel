@@ -463,43 +463,40 @@ function Test-TierModelPrerequisites {
         if ($IncludeDmsa -and $null -ne $schemaDN) {
             # dMSA requires schema version >= 91 (Windows Server 2025)
             if ($schemaVersion -lt 91) {
-                $result.Valid = $false
-                $null = $result.Errors.Add("dMSA requires schema version >= 91 (Windows Server 2025). Current: $schemaVersion")
+                $result.EnvironmentSnapshot.DmsaSupported = $false
+                $null = $result.Remediation.Add("dMSA requires schema version >= 91 (Windows Server 2025). Current: $schemaVersion. Skipping dMSA feature.")
             }
             # dMSA requires DFL = Windows2025Domain
             if ($dfl -ne 'Windows2025Domain') {
-                $result.Valid = $false
-                $null = $result.Errors.Add("dMSA requires Domain Functional Level = Windows2025Domain. Current: $dfl")
+                $result.EnvironmentSnapshot.DmsaSupported = $false
+                $null = $result.Remediation.Add("dMSA requires Domain Functional Level = Windows2025Domain. Current: $dfl. Skipping dMSA feature.")
             }
             # Verify msDS-DelegatedManagedServiceAccount class exists
             try {
                 $dmsaClass = Get-ADObject -Filter "ldapDisplayName -eq 'msDS-DelegatedManagedServiceAccount'" -SearchBase $schemaDN -Server $PreferredDc -Properties objectClass -ErrorAction Stop
                 $result.EnvironmentSnapshot.DmsaSchemaClassExists = [bool]$dmsaClass
             } catch {
-                $result.Valid = $false
                 $result.EnvironmentSnapshot.DmsaSchemaClassExists = $false
-                $null = $result.Errors.Add("msDS-DelegatedManagedServiceAccount class not found in schema")
+                $result.EnvironmentSnapshot.DmsaSupported = $false
+                $null = $result.Remediation.Add("msDS-DelegatedManagedServiceAccount class not found in schema. Skipping dMSA feature.")
             }
             # KDS Root Key check for dMSA (only if not already checked by gMSA)
-            if (-not $result.EnvironmentSnapshot.ContainsKey('KdsRootKeyExists')) {
+            if ($result.EnvironmentSnapshot.DmsaSupported -ne $false -and -not $result.EnvironmentSnapshot.ContainsKey('KdsRootKeyExists')) {
                 try {
                     $kdsKeys = Invoke-Command -ComputerName $PreferredDc -ScriptBlock { Get-KdsRootKey } -ErrorAction Stop
                     $result.EnvironmentSnapshot.KdsRootKeyExists = ($null -ne $kdsKeys -and @($kdsKeys).Count -gt 0)
                     if (-not $result.EnvironmentSnapshot.KdsRootKeyExists) {
-                        $result.Valid = $false
-                        $null = $result.Errors.Add("No KDS Root Key found. dMSA requires an effective KDS Root Key.")
+                        $null = $result.Remediation.Add("No KDS Root Key found. dMSA requires an effective KDS Root Key.")
                     } else {
                         $latestKey = @($kdsKeys) | Sort-Object EffectiveTime -Descending | Select-Object -First 1
                         $result.EnvironmentSnapshot.KdsRootKeyEffective = ($latestKey.EffectiveTime -lt (Get-Date).AddHours(-10))
                         if (-not $result.EnvironmentSnapshot.KdsRootKeyEffective) {
-                            $result.Valid = $false
-                            $null = $result.Errors.Add("KDS Root Key exists but is not yet effective for dMSA (must be older than 10 hours). Effective time: $($latestKey.EffectiveTime)")
+                            $null = $result.Remediation.Add("KDS Root Key exists but is not yet effective for dMSA (must be older than 10 hours). Effective time: $($latestKey.EffectiveTime)")
                         }
                     }
                 } catch {
-                    $result.Valid = $false
                     $result.EnvironmentSnapshot.KdsRootKeyExists = $false
-                    $null = $result.Errors.Add("Failed to check KDS Root Key via Invoke-Command on $PreferredDc`: $($_.Exception.Message)")
+                    $null = $result.Remediation.Add("Failed to check KDS Root Key via Invoke-Command on $PreferredDc`: $($_.Exception.Message)")
                 }
             }
         }
