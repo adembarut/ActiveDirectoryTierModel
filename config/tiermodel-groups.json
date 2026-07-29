@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "comment": "Security groups for Tier Model. Rarely changes after initial deployment unless organizational structure changes.",
+  "comment": "Security groups for Tier Model. Categorized under Admins and Operators sub-OUs.",
   "groups": [
     {
       "name": "PAW Domain Join",
@@ -8,7 +8,7 @@
       "description": "Members of this group are delegated rights to join machines to the domain in the Tier Model PAW Staging OU",
       "groupscope": "Global",
       "groupcategory": "Security",
-      "path": "OU=Tier 0 Groups,OU=Tier 0,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
+      "path": "OU=Operators,OU=Tier 0 Groups,OU=Tier 0,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
       "comment": "Group to allow Domain Join of PAWs to the PAW Staging OU",
       "info": "=======================================================\r\nTIER MODEL IDENTITY DOCUMENTATION\r\n=======================================================\r\nSCOPE      : Tier 0 (Control Plane)\r\nROLE       : PAW Provisioning Domain Join Group\r\nPRIVILEGES : Delegated rights to join Privileged Access\r\n             Workstation (PAW) computer objects into\r\n             Tier 0 PAW Staging OU.\r\n-------------------------------------------------------\r\nCHANGE & AUDIT TRACKING:\r\n- Version  : TierModel v2.0 (Microsoft EAM)\r\n- Managed  : AD Security Architecture Team\r\n- History  : Standard TierModel Deployment\r\n======================================================="
     },
@@ -18,7 +18,7 @@
       "description": "PAW Emergency Access Accounts (Break Glass)",
       "groupscope": "Global",
       "groupcategory": "Security",
-      "path": "OU=Tier 0 Groups,OU=Tier 0,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
+      "path": "OU=Admins,OU=Tier 0 Groups,OU=Tier 0,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
       "comment": "Emergency access group for AD forest break-fix operations",
       "info": "=======================================================\r\nTIER MODEL IDENTITY DOCUMENTATION\r\n=======================================================\r\nSCOPE      : Tier 0 (Control Plane Root)\r\nROLE       : Emergency Access Group (Break Glass)\r\nPRIVILEGES : Member of Domain Admins. Used ONLY when\r\n             Tier 0 PKI/AuthSilo services fail.\r\n-------------------------------------------------------\r\nCHANGE & AUDIT TRACKING:\r\n- Version  : TierModel v2.0 (Microsoft EAM)\r\n- Managed  : AD Security Architecture Team\r\n- History  : Standard TierModel Deployment\r\n======================================================="
     },
@@ -28,7 +28,7 @@
       "description": "Members of this group administer Tier 0, 1, and 2 resources",
       "groupscope": "Global",
       "groupcategory": "Security",
-      "path": "OU=Tier 0 Groups,OU=Tier 0,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
+      "path": "OU=Admins,OU=Tier 0 Groups,OU=Tier 0,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
       "comment": "Group to allow management of the Tier Model Administration OU without requiring Domain Admin rights",
       "info": "=======================================================\r\nTIER MODEL IDENTITY DOCUMENTATION\r\n=======================================================\r\nSCOPE      : Tier 0 (Control Plane Root)\r\nROLE       : Tier 0 Admins (Domain Admins)\r\nPRIVILEGES : Full Control over Active Directory Forest,\r\n             DCs, and Tier 0 OUs. Restricted to Tier 0\r\n             PAWs and Tier 0 DCs/Servers.\r\n-------------------------------------------------------\r\nCHANGE & AUDIT TRACKING:\r\n- Version  : TierModel v2.0 (Microsoft EAM)\r\n- Managed  : AD Security Architecture Team\r\n- History  : Standard TierModel Deployment\r\n======================================================="
     },
@@ -48,7 +48,7 @@
       "description": "Members of this group are delegated rights to log on to Tier 0 PAWs",
       "groupscope": "Global",
       "groupcategory": "Security",
-      "path": "OU=Tier 0 Groups,OU=Tier 0,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
+      "path": "OU=Operators,OU=Tier 0 Groups,OU=Tier 0,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
       "comment": "Group provides non-elevated logon rights to Tier 0 PAWs",
       "info": "=======================================================\r\nTIER MODEL IDENTITY DOCUMENTATION\r\n=======================================================\r\nSCOPE      : Tier 0 (Control Plane)\r\nROLE       : Tier 0 Non-Elevated Operators\r\nPRIVILEGES : Provides non-elevated logon rights to Tier\r\n             0 PAWs for operational administration\r\n             tasks.\r\n-------------------------------------------------------\r\nCHANGE & AUDIT TRACKING:\r\n- Version  : TierModel v2.0 (Microsoft EAM)\r\n- Managed  : AD Security Architecture Team\r\n- History  : Standard TierModel Deployment\r\n======================================================="
     },
@@ -68,7 +68,7 @@
       "description": "Members of this group are members of the local Administrators group on all Tier 0 Member Servers",
       "groupscope": "Global",
       "groupcategory": "Security",
-      "path": "OU=Tier 0 Groups,OU=Tier 0,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
+      "path": "OU=Operators,OU=Tier 0 Groups,OU=Tier 0,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
       "comment": "Group used to allow Local Administrator rights on Tier 0 Member Servers, but not Domain Controllers",
       "info": "=======================================================\r\nTIER MODEL IDENTITY DOCUMENTATION\r\n=======================================================\r\nSCOPE      : Tier 0 (Control Plane)\r\nROLE       : Tier 0 Member Server Admins\r\nPRIVILEGES : Local Administrator rights on Tier 0\r\n             Member Servers. Explicitly prohibited from\r\n             administering Domain Controllers.\r\n-------------------------------------------------------\r\nCHANGE & AUDIT TRACKING:\r\n- Version  : TierModel v2.0 (Microsoft EAM)\r\n- Managed  : AD Security Architecture Team\r\n- History  : Standard TierModel Deployment\r\n======================================================="
     },
@@ -88,7 +88,7 @@
       "description": "Members of this group are only allowed VPN connectivity from a Tier 0 PAW device.",
       "groupscope": "Global",
       "groupcategory": "Security",
-      "path": "OU=Tier 0 Groups,OU=Tier 0,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
+      "path": "OU=Operators,OU=Tier 0 Groups,OU=Tier 0,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
       "comment": "Group is only required if VPN access is allowed to Tier 0 VPN User Account from a Tier 0 PAW device",
       "info": "=======================================================\r\nTIER MODEL IDENTITY DOCUMENTATION\r\n=======================================================\r\nSCOPE      : Tier 0 (Control Plane)\r\nROLE       : Tier 0 Remote Access / VPN Accounts\r\nPRIVILEGES : Restricted VPN connectivity permitted only\r\n             from Tier 0 PAW hardware devices.\r\n-------------------------------------------------------\r\nCHANGE & AUDIT TRACKING:\r\n- Version  : TierModel v2.0 (Microsoft EAM)\r\n- Managed  : AD Security Architecture Team\r\n- History  : Standard TierModel Deployment\r\n======================================================="
     },
@@ -98,7 +98,7 @@
       "description": "Members of this group can administer Tier 1 objects",
       "groupscope": "Global",
       "groupcategory": "Security",
-      "path": "OU=Tier 1 Groups,OU=Tier 1,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
+      "path": "OU=Admins,OU=Tier 1 Groups,OU=Tier 1,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
       "comment": "Group to allow management of the Tier Model Administration > Tier 1 Child OU's",
       "info": "=======================================================\r\nTIER MODEL IDENTITY DOCUMENTATION\r\n=======================================================\r\nSCOPE      : Tier 1 (Management Plane)\r\nROLE       : Tier 1 Administrators\r\nPRIVILEGES : Administers Tier 1 OUs, Member Servers,\r\n             Apps, and PAWs. Restricted from accessing\r\n             Tier 0 resources.\r\n-------------------------------------------------------\r\nCHANGE & AUDIT TRACKING:\r\n- Version  : TierModel v2.0 (Microsoft EAM)\r\n- Managed  : Infrastructure Security Team\r\n- History  : Standard TierModel Deployment\r\n======================================================="
     },
@@ -118,7 +118,7 @@
       "description": "Members of this group can log on to Tier 1 PAWs",
       "groupscope": "Global",
       "groupcategory": "Security",
-      "path": "OU=Tier 1 Groups,OU=Tier 1,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
+      "path": "OU=Operators,OU=Tier 1 Groups,OU=Tier 1,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
       "comment": "Group provides non-elevated logon rights to Tier 1 PAWs",
       "info": "=======================================================\r\nTIER MODEL IDENTITY DOCUMENTATION\r\n=======================================================\r\nSCOPE      : Tier 1 (Management Plane)\r\nROLE       : Tier 1 Non-Elevated Operators\r\nPRIVILEGES : Non-elevated logon rights to Tier 1 PAWs\r\n             for server management tasks.\r\n-------------------------------------------------------\r\nCHANGE & AUDIT TRACKING:\r\n- Version  : TierModel v2.0 (Microsoft EAM)\r\n- Managed  : Infrastructure Security Team\r\n- History  : Standard TierModel Deployment\r\n======================================================="
     },
@@ -138,7 +138,7 @@
       "description": "Members of this group are delegated rights to join machines to the domain in the Tier Model Tier 1 Servers Staging OU.",
       "groupscope": "Global",
       "groupcategory": "Security",
-      "path": "OU=Tier 1 Groups,OU=Tier 1,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
+      "path": "OU=Operators,OU=Tier 1 Groups,OU=Tier 1,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
       "comment": "Group to allow Domain Join of Tier 1 member servers to the Tier 1 Server Staging OU",
       "info": "=======================================================\r\nTIER MODEL IDENTITY DOCUMENTATION\r\n=======================================================\r\nSCOPE      : Tier 1 (Management Plane)\r\nROLE       : Tier 1 Server Provisioning Group\r\nPRIVILEGES : Delegated rights to join computer objects\r\n             into Tier 1 Server Staging OU.\r\n-------------------------------------------------------\r\nCHANGE & AUDIT TRACKING:\r\n- Version  : TierModel v2.0 (Microsoft EAM)\r\n- Managed  : Infrastructure Security Team\r\n- History  : Standard TierModel Deployment\r\n======================================================="
     },
@@ -148,7 +148,7 @@
       "description": "Members of this group are administrators of Tier 1 Servers",
       "groupscope": "Global",
       "groupcategory": "Security",
-      "path": "OU=Tier 1 Groups,OU=Tier 1,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
+      "path": "OU=Operators,OU=Tier 1 Groups,OU=Tier 1,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
       "comment": "Group to allow management of computer objects in the Tier 1 Member Server OU",
       "info": "=======================================================\r\nTIER MODEL IDENTITY DOCUMENTATION\r\n=======================================================\r\nSCOPE      : Tier 1 (Management Plane)\r\nROLE       : Tier 1 Server Administrators\r\nPRIVILEGES : Local Administrator rights on Tier 1\r\n             Member Servers. Delegated computer object\r\n             management in Tier 1 Server OU.\r\n-------------------------------------------------------\r\nCHANGE & AUDIT TRACKING:\r\n- Version  : TierModel v2.0 (Microsoft EAM)\r\n- Managed  : Infrastructure Security Team\r\n- History  : Standard TierModel Deployment\r\n======================================================="
     },
@@ -168,7 +168,7 @@
       "description": "Members of this group are only allowed VPN connectivity from a Tier 1 PAW device.",
       "groupscope": "Global",
       "groupcategory": "Security",
-      "path": "OU=Tier 1 Groups,OU=Tier 1,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
+      "path": "OU=Operators,OU=Tier 1 Groups,OU=Tier 1,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
       "comment": "Group is only required if VPN access is allowed to Tier 1 VPN User Account from a Tier 1 PAW device",
       "info": "=======================================================\r\nTIER MODEL IDENTITY DOCUMENTATION\r\n=======================================================\r\nSCOPE      : Tier 1 (Management Plane)\r\nROLE       : Tier 1 Remote Access / VPN Accounts\r\nPRIVILEGES : VPN connectivity permitted from Tier 1 PAW\r\n             devices to Tier 1 network.\r\n-------------------------------------------------------\r\nCHANGE & AUDIT TRACKING:\r\n- Version  : TierModel v2.0 (Microsoft EAM)\r\n- Managed  : Infrastructure Security Team\r\n- History  : Standard TierModel Deployment\r\n======================================================="
     },
@@ -178,7 +178,7 @@
       "description": "Members of this group can create, modify and delete End-User user objects in the Tier 2 End-User Accounts OU.",
       "groupscope": "Global",
       "groupcategory": "Security",
-      "path": "OU=Tier 2 Groups,OU=Tier 2,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
+      "path": "OU=Operators,OU=Tier 2 Groups,OU=Tier 2,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
       "comment": "Group has full control of user objects in the Tier 2 End-User Accounts OU, but not manage passwords for end-user accounts.",
       "info": "=======================================================\r\nTIER MODEL IDENTITY DOCUMENTATION\r\n=======================================================\r\nSCOPE      : Tier 2 (User & Workstation)\r\nROLE       : End-User Account Operators\r\nPRIVILEGES : Delegated rights to create, modify, and\r\n             delete user objects in Tier 2 End-User\r\n             Accounts OU.\r\n-------------------------------------------------------\r\nCHANGE & AUDIT TRACKING:\r\n- Version  : TierModel v2.0 (Microsoft EAM)\r\n- Managed  : Service Desk Operations\r\n- History  : Standard TierModel Deployment\r\n======================================================="
     },
@@ -188,7 +188,7 @@
       "description": "Members of this group can administer Tier 2 Objects",
       "groupscope": "Global",
       "groupcategory": "Security",
-      "path": "OU=Tier 2 Groups,OU=Tier 2,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
+      "path": "OU=Admins,OU=Tier 2 Groups,OU=Tier 2,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
       "comment": "Group to allow management of the Tier Model Administration > Tier 2 Child OU's",
       "info": "=======================================================\r\nTIER MODEL IDENTITY DOCUMENTATION\r\n=======================================================\r\nSCOPE      : Tier 2 (User & Workstation)\r\nROLE       : Tier 2 Administrators\r\nPRIVILEGES : Administers Tier 2 Child OUs, End-User\r\n             Objects, and Tier 2 PAWs. Denied access to\r\n             Tier 0 and Tier 1.\r\n-------------------------------------------------------\r\nCHANGE & AUDIT TRACKING:\r\n- Version  : TierModel v2.0 (Microsoft EAM)\r\n- Managed  : Service Desk Operations\r\n- History  : Standard TierModel Deployment\r\n======================================================="
     },
@@ -198,7 +198,7 @@
       "description": "Members of this group can log on to quarantine devices. This group must not be a member of Tier 2 Operators",
       "groupscope": "Global",
       "groupcategory": "Security",
-      "path": "OU=Tier 2 Groups,OU=Tier 2,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
+      "path": "OU=Operators,OU=Tier 2 Groups,OU=Tier 2,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
       "comment": "Group allows logging into quarantined devices only under the Tier Model Computer Quarantine OU",
       "info": "=======================================================\r\nTIER MODEL IDENTITY DOCUMENTATION\r\n=======================================================\r\nSCOPE      : Tier 2 (User & Workstation)\r\nROLE       : Quarantine Device Management Ops\r\nPRIVILEGES : Local logon rights to isolated computer\r\n             objects in Computer Quarantine OU for\r\n             remediation.\r\n-------------------------------------------------------\r\nCHANGE & AUDIT TRACKING:\r\n- Version  : TierModel v2.0 (Microsoft EAM)\r\n- Managed  : Service Desk Operations\r\n- History  : Standard TierModel Deployment\r\n======================================================="
     },
@@ -208,7 +208,7 @@
       "description": "Members of this group can create, modify and delete End-User computer objects in the Tier 2 End-User device OU.",
       "groupscope": "Global",
       "groupcategory": "Security",
-      "path": "OU=Tier 2 Groups,OU=Tier 2,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
+      "path": "OU=Operators,OU=Tier 2 Groups,OU=Tier 2,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
       "comment": "Group has full control over computer objects in the Tier 2 End-User Devices OU.",
       "info": "=======================================================\r\nTIER MODEL IDENTITY DOCUMENTATION\r\n=======================================================\r\nSCOPE      : Tier 2 (User & Workstation)\r\nROLE       : End-User Device Management Ops\r\nPRIVILEGES : Full control over computer objects in Tier\r\n             2 End-User Devices OU.\r\n-------------------------------------------------------\r\nCHANGE & AUDIT TRACKING:\r\n- Version  : TierModel v2.0 (Microsoft EAM)\r\n- Managed  : Service Desk Operations\r\n- History  : Standard TierModel Deployment\r\n======================================================="
     },
@@ -218,7 +218,7 @@
       "description": "Members of this group can create, modify and delete Tier 2 Groups in the Tier 2 End-User Groups OU.",
       "groupscope": "Global",
       "groupcategory": "Security",
-      "path": "OU=Tier 2 Groups,OU=Tier 2,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
+      "path": "OU=Operators,OU=Tier 2 Groups,OU=Tier 2,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
       "comment": "Group has full control over group objects in the Tier 2 End-User Groups OU.",
       "info": "=======================================================\r\nTIER MODEL IDENTITY DOCUMENTATION\r\n=======================================================\r\nSCOPE      : Tier 2 (User & Workstation)\r\nROLE       : End-User Group Management Ops\r\nPRIVILEGES : Full control over security and\r\n             distribution groups in Tier 2 End-User\r\n             Groups OU.\r\n-------------------------------------------------------\r\nCHANGE & AUDIT TRACKING:\r\n- Version  : TierModel v2.0 (Microsoft EAM)\r\n- Managed  : Service Desk Operations\r\n- History  : Standard TierModel Deployment\r\n======================================================="
     },
@@ -228,7 +228,7 @@
       "description": "Members of this group are Help Desk Operators for Tier 2 and can reset passwords and unlock accounts for End-User accounts in Tier 2.",
       "groupscope": "Global",
       "groupcategory": "Security",
-      "path": "OU=Tier 2 Groups,OU=Tier 2,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
+      "path": "OU=Operators,OU=Tier 2 Groups,OU=Tier 2,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
       "comment": "Group has full control over user objects in the Tier 2 End-User Accounts OU, including password resets and account unlocks.",
       "info": "=======================================================\r\nTIER MODEL IDENTITY DOCUMENTATION\r\n=======================================================\r\nSCOPE      : Tier 2 (User & Workstation)\r\nROLE       : Service Desk Support Operators\r\nPRIVILEGES : Delegated password reset, account unlock,\r\n             and BitLocker/LAPS recovery key read\r\n             access.\r\n-------------------------------------------------------\r\nCHANGE & AUDIT TRACKING:\r\n- Version  : TierModel v2.0 (Microsoft EAM)\r\n- Managed  : Service Desk Operations\r\n- History  : Standard TierModel Deployment\r\n======================================================="
     },
@@ -238,7 +238,7 @@
       "description": "Members of this group can log on to Tier Model End-User devices to perform local administrative tasks. This group must not be a member of Tier 2 Operators.",
       "groupscope": "Global",
       "groupcategory": "Security",
-      "path": "OU=Tier 2 Groups,OU=Tier 2,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
+      "path": "OU=Operators,OU=Tier 2 Groups,OU=Tier 2,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
       "comment": "Group provides local administrator rights on Tier 2 End-User Devices, but does not allow logon to Tier 2 PAWs or managing Active Directory objects in the Tier 2 OU's.",
       "info": "=======================================================\r\nTIER MODEL IDENTITY DOCUMENTATION\r\n=======================================================\r\nSCOPE      : Tier 2 (User & Workstation)\r\nROLE       : Workstation Local Admin Ops\r\nPRIVILEGES : Local Administrator rights on Tier 2\r\n             End-User Devices. No PAW logon or AD\r\n             object management.\r\n-------------------------------------------------------\r\nCHANGE & AUDIT TRACKING:\r\n- Version  : TierModel v2.0 (Microsoft EAM)\r\n- Managed  : Service Desk Operations\r\n- History  : Standard TierModel Deployment\r\n======================================================="
     },
@@ -248,7 +248,7 @@
       "description": "Members of this group can log on to Tier 2 PAWs",
       "groupscope": "Global",
       "groupcategory": "Security",
-      "path": "OU=Tier 2 Groups,OU=Tier 2,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
+      "path": "OU=Operators,OU=Tier 2 Groups,OU=Tier 2,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
       "comment": "Group provides non-elevated logon rights to Tier 2 PAWs",
       "info": "=======================================================\r\nTIER MODEL IDENTITY DOCUMENTATION\r\n=======================================================\r\nSCOPE      : Tier 2 (User & Workstation)\r\nROLE       : Tier 2 Non-Elevated Operators\r\nPRIVILEGES : Non-elevated logon rights to Tier 2 PAWs\r\n             for workstation support.\r\n-------------------------------------------------------\r\nCHANGE & AUDIT TRACKING:\r\n- Version  : TierModel v2.0 (Microsoft EAM)\r\n- Managed  : Service Desk Operations\r\n- History  : Standard TierModel Deployment\r\n======================================================="
     },
@@ -268,8 +268,8 @@
       "description": "Members of this group are only allowed VPN connectivity from a Tier 2 PAW device.",
       "groupscope": "Global",
       "groupcategory": "Security",
-      "path": "OU=Tier 2 Groups,OU=Tier 2,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
-      "comment": "Group is only required if VPN access is allowed to Tier 1 VPN User Account from a Tier 1 PAW device",
+      "path": "OU=Operators,OU=Tier 2 Groups,OU=Tier 2,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
+      "comment": "Group is only required if VPN access is allowed to Tier 2 VPN User Account from a Tier 2 PAW device",
       "info": "=======================================================\r\nTIER MODEL IDENTITY DOCUMENTATION\r\n=======================================================\r\nSCOPE      : Tier 2 (User & Workstation)\r\nROLE       : Tier 2 Remote Access / VPN Accounts\r\nPRIVILEGES : VPN connectivity permitted from Tier 2 PAW\r\n             devices to Tier 2 network.\r\n-------------------------------------------------------\r\nCHANGE & AUDIT TRACKING:\r\n- Version  : TierModel v2.0 (Microsoft EAM)\r\n- Managed  : Service Desk Operations\r\n- History  : Standard TierModel Deployment\r\n======================================================="
     }
   ]
