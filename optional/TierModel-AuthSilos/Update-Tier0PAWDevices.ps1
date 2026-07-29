@@ -4,10 +4,10 @@ Param (
     [String]$TieredComputerGroupName  = "Tier0PAWDevices",
 
     [Parameter(Mandatory=$false)]
-    [string]$ParentOU = "TierModel",
+    [string]$ParentOU,
 
     [Parameter(Mandatory=$false)]
-    [string]$TieredComputerOU = "OU=Tier 0 PAW Devices,OU=Tier 0,OU=Tier Model Administration,OU=$ParentOU",
+    [string]$TieredComputerOU,
 
     [Parameter (Mandatory=$false)]
     [bool]$MultiDomainForest = $false
@@ -90,6 +90,27 @@ if (Test-Path $LogFile){
 }
 #endregion
 Write-Log -Message $MyInvocation.Line -Severity Debug
+
+# Dynamic ParentOU & Root OU Resolution
+if ($PSBoundParameters.ContainsKey('ParentOU') -eq $false -and [string]::IsNullOrWhiteSpace($ParentOU)) {
+    try {
+        if ([bool](Get-ADOrganizationalUnit -Filter "Name -eq 'TierModel'")) {
+            $ParentOU = "TierModel"
+        } elseif ([bool](Get-ADOrganizationalUnit -Filter "Name -eq '_TierModel'")) {
+            $ParentOU = "_TierModel"
+        } else {
+            $ParentOU = ""
+        }
+    } catch {
+        $ParentOU = ""
+    }
+}
+
+$ParentPrefix = if ([string]::IsNullOrWhiteSpace($ParentOU)) { "" } else { ",OU=$($ParentOU.Trim())" }
+
+if ([string]::IsNullOrWhiteSpace($TieredComputerOU)) {
+    $TieredComputerOU = "OU=Tier 0 PAW Devices,OU=Tier 0,OU=Tier Model Administration${ParentPrefix}"
+}
 
 #for compatibility reason the Domain component will be removed from the OU path
 $aryTier0Computer = @()

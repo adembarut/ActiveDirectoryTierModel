@@ -1,13 +1,13 @@
 [cmdletbinding(SupportsShouldProcess=$true)]
 param (
     [Parameter(Mandatory=$false)]
-    [string]$ParentOU = "TierModel",
+    [string]$ParentOU,
 
     [Parameter(Mandatory=$false)]
-	[string]$TieredUsersOU = "OU=Tier 0 Accounts,OU=Tier 0,OU=Tier Model Administration,OU=$ParentOU",
+    [string]$TieredUsersOU,
     
     [Parameter(Mandatory=$false)]
-    [string]$TieredServiceAccountsOU = "OU=Tier 0 Service Accounts,OU=Tier 0,OU=Tier Model Administration,OU=$ParentOU",
+    [string]$TieredServiceAccountsOU,
 	   
 	[Parameter(Mandatory=$false)]
 	[string]$KerberosPolicyName = "*- Tier 0 Authentication Silo",
@@ -162,6 +162,30 @@ if (Test-Path $LogFile){
 }
 #endregion
 Write-Log -Message $MyInvocation.Line -Severity Debug
+
+# Dynamic ParentOU & Root OU Resolution
+if ($PSBoundParameters.ContainsKey('ParentOU') -eq $false -and [string]::IsNullOrWhiteSpace($ParentOU)) {
+    try {
+        if ([bool](Get-ADOrganizationalUnit -Filter "Name -eq 'TierModel'")) {
+            $ParentOU = "TierModel"
+        } elseif ([bool](Get-ADOrganizationalUnit -Filter "Name -eq '_TierModel'")) {
+            $ParentOU = "_TierModel"
+        } else {
+            $ParentOU = ""
+        }
+    } catch {
+        $ParentOU = ""
+    }
+}
+
+$ParentPrefix = if ([string]::IsNullOrWhiteSpace($ParentOU)) { "" } else { "OU=$($ParentOU.Trim())," }
+
+if ([string]::IsNullOrWhiteSpace($TieredUsersOU)) {
+    $TieredUsersOU = "OU=Tier 0 Accounts,OU=Tier 0,OU=Tier Model Administration,${ParentPrefix}"
+}
+if ([string]::IsNullOrWhiteSpace($TieredServiceAccountsOU)) {
+    $TieredServiceAccountsOU = "OU=Tier 0 Service Accounts,OU=Tier 0,OU=Tier Model Administration,${ParentPrefix}"
+}
 
 #Validate the Kerberos Authentication policy exists. If not terminate the script with error code 0xA3. 
 $KerberosAuthenticationPolicy = Get-ADAuthenticationPolicy -Filter {Name -eq $KerberosPolicyName}
