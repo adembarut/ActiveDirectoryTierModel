@@ -1,7 +1,7 @@
 [cmdletbinding(SupportsShouldProcess=$true)]
 param (
     [Parameter(Mandatory=$false)]
-    [string]$ParentOU = "_TierModel",
+    [string]$ParentOU = "TierModel",
 
     [Parameter(Mandatory=$false)]
 	[string]$TieredUsersOU = "OU=Tier 0 Accounts,OU=Tier 0,OU=Tier Model Administration,OU=$ParentOU",

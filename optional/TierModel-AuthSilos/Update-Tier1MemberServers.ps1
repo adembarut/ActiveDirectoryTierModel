@@ -4,7 +4,7 @@ Param (
     [String]$TieredComputerGroupName  = "Tier1MemberServers",
 
     [Parameter(Mandatory=$false)]
-    [string]$ParentOU = "_TierModel",
+    [string]$ParentOU = "TierModel",
 
     [Parameter(Mandatory=$false)]
     [string]$TieredComputerOU = "OU=Tier 1 Member Servers,OU=$ParentOU",
