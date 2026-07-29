@@ -14,6 +14,9 @@ param (
     
     [Parameter (Mandatory=$false)]
     [string]$ExcludeTieredUser = "svc-t1srvdomainjoin",
+
+    [Parameter (Mandatory=$false)]
+    [string]$ExcludeGroupName = "Tier 1 AuthSilo Excluded Accounts",
     
     [Parameter(Mandatory=$false)]
     [switch]$MultiDomainForest = $false,
@@ -216,6 +219,26 @@ foreach ($DomainName in $aryDomainName){
             #search for any user in the privileged OU
             foreach ($user in Get-ADUser -SearchBase "$TieredUsersOU,$((Get-ADDomain -Server $DomainName).DistinguishedName)" -Filter * -Properties msDS-AssignedAuthNPolicy,memberOf,UserAccountControl -SearchScope Subtree -Server $DomainName){
                 Write-Log -Message "Working on $($User.Distiguishedname)" -Severity Debug
+                
+                # Check if user is explicitly excluded by name or group membership
+                $isExcluded = $false
+                if ($ExcludeTieredUser) {
+                    foreach ($exName in ($ExcludeTieredUser -split ',')) {
+                        if ($exName -and ($user.SamAccountName -ieq $exName.Trim() -or $user.DistinguishedName -ilike "*$($exName.Trim())*")) {
+                            $isExcluded = $true; break
+                        }
+                    }
+                }
+                if (-not $isExcluded -and $ExcludeGroupName -and $user.MemberOf) {
+                    if ($user.MemberOf -match "(?i)CN=$ExcludeGroupName,") {
+                        $isExcluded = $true
+                    }
+                }
+
+                if ($isExcluded) {
+                    Write-Log -Message "Skipping excluded user $($user.DistinguishedName) from AuthSilo & Protected Users enforcement" -Severity Information
+                    continue
+                }
                 
                 if (($user.UserAccountControl -BAND 1048576) -ne 1048576){
                     try {

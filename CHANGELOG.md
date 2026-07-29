@@ -20,6 +20,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **BreakGlassAdmin Identity**: Integrated `Break Glass Admins` group and `BreakGlassAdmin` user account under `Tier 0 Accounts` for disaster recovery.
 - **Disaster Recovery Exclusions**: Configured `BreakGlassAdmin` to be excluded from Kerberos AuthSilo and Protected Users enforcement by default so administrators retain recovery access if ADFS/PKI services fail.
 
+#### Group-Based AuthSilo Exclusion Management
+- **Dedicated Security Groups**: Created `Tier 0 AuthSilo Excluded Accounts` and `Tier 1 AuthSilo Excluded Accounts` in `config/tiermodel-groups.json` and deployed them under `OU=Admins,OU=Tier 0 Groups` and `OU=Admins,OU=Tier 1 Groups`.
+- **Maintenance Script Integration**: Updated `Update-Tier0AuthSiloUsers.ps1` and `Update-Tier1AuthSiloUsers.ps1` with `$ExcludeGroupName` support to automatically skip users belonging to these groups from AuthSilo TGT restrictions and Protected Users group enforcement.
+
 #### Hybrid Cloud Sync & Optional Script Alignment
 - **Entra ID Sync Documentation**: Created `docs/hybrid-cloud-entra-sync.md` defining Entra ID Connect OU filtering rules for hybrid cloud security.
 - **Optional Script Alignment**: Updated `Redirect-DefaultContainers.ps1`, `Enable-TierModelAuditing.ps1`, and `Update-Tier0AuthSiloUsers.ps1` to support `-ParentOU`, target `Enabled End-Users Accounts`, and respect `BreakGlassAdmin`.
