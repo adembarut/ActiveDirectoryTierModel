@@ -2570,32 +2570,57 @@ if (($activeScopeCount -eq 0 -and $activeIncludeCount -gt 0) -or ($FullDeploymen
             $standaloneDeploymentPlan.TotalActions += 4
         } else {
             try {
-                # 1. Deploy AuthSilo Policies
+                # 1. Deploy AuthSilo Scripts to SYSVOL Central Secure Repository
+                Write-Host "  Copying AuthSilo scripts to SYSVOL central secure repository..." -ForegroundColor Yellow
+                $adDomainRoot = (Get-ADDomain -Server $PreferredDc).DNSRoot
+                $sysvolScriptsDir = "\\$PreferredDc\SYSVOL\$adDomainRoot\scripts\TierModelAuthSilos"
+                $sysvolLocalDir = Join-Path $env:SystemRoot "SYSVOL\sysvol\$adDomainRoot\scripts\TierModelAuthSilos"
+                if (-not (Test-Path $sysvolScriptsDir)) {
+                    New-Item -ItemType Directory -Path $sysvolScriptsDir -Force | Out-Null
+                }
+                $siloSourceDir = Join-Path $PSScriptRoot "optional\TierModel-AuthSilos"
+                if (Test-Path $siloSourceDir) {
+                    Get-ChildItem -Path $siloSourceDir -Filter "*.ps1" | ForEach-Object {
+                        Copy-Item -Path $_.FullName -Destination $sysvolScriptsDir -Force
+                    }
+                    if (Test-Path $sysvolLocalDir) {
+                        Get-ChildItem -Path $sysvolLocalDir -Filter "*.ps1" | Unblock-File -ErrorAction SilentlyContinue
+                    }
+                    Write-Host "  ✅ AuthSilo scripts deployed to SYSVOL: $sysvolScriptsDir" -ForegroundColor Green
+                }
+
+                # Determine execution directory (prefer local SYSVOL disk path to prevent UNC execution restrictions)
+                $execDir = if (Test-Path $sysvolLocalDir) { $sysvolLocalDir } else { $sysvolScriptsDir }
+
+                # 2. Deploy AuthSilo Policies
                 Write-Host "  Deploying Kerberos AuthSilo Policies..." -ForegroundColor Yellow
-                $siloDeployPath = Join-Path $PSScriptRoot "optional\TierModel-AuthSilos\Deploy-TierModelAuthSilo.ps1"
+                $siloDeployPath = Join-Path $execDir "Deploy-TierModelAuthSilo.ps1"
+                if (-not (Test-Path $siloDeployPath)) { $siloDeployPath = Join-Path $PSScriptRoot "optional\TierModel-AuthSilos\Deploy-TierModelAuthSilo.ps1" }
                 if (Test-Path $siloDeployPath) {
                     & $siloDeployPath -PreferredDC $PreferredDc
                 }
                 
-                # 2. Sync Users (Tier 0 & Tier 1)
+                # 3. Sync Users (Tier 0 & Tier 1)
                 Write-Host "  Syncing Tier 0 & Tier 1 AuthSilo Users..." -ForegroundColor Yellow
-                $u0Path = Join-Path $PSScriptRoot "optional\TierModel-AuthSilos\Update-Tier0AuthSiloUsers.ps1"
-                $u1Path = Join-Path $PSScriptRoot "optional\TierModel-AuthSilos\Update-Tier1AuthSiloUsers.ps1"
+                $u0Path = Join-Path $execDir "Update-Tier0AuthSiloUsers.ps1"
+                $u1Path = Join-Path $execDir "Update-Tier1AuthSiloUsers.ps1"
+                if (-not (Test-Path $u0Path)) { $u0Path = Join-Path $PSScriptRoot "optional\TierModel-AuthSilos\Update-Tier0AuthSiloUsers.ps1" }
+                if (-not (Test-Path $u1Path)) { $u1Path = Join-Path $PSScriptRoot "optional\TierModel-AuthSilos\Update-Tier1AuthSiloUsers.ps1" }
                 if (Test-Path $u0Path) { & $u0Path -ParentOU $ParentOU -ExcludeGroupName "Tier 0 AuthSilo Excluded Accounts" -ExcludeTieredUser "svc-pawdomainjoin,BreakGlassAdmin" }
                 if (Test-Path $u1Path) { & $u1Path -ParentOU $ParentOU -ExcludeGroupName "Tier 1 AuthSilo Excluded Accounts" -ExcludeTieredUser "svc-t1srvdomainjoin" }
                 
-                # 3. Sync Computers
+                # 4. Sync Computers
                 Write-Host "  Syncing Tier 0 & Tier 1 Computers & PAW Devices..." -ForegroundColor Yellow
-                $ms0Path = Join-Path $PSScriptRoot "optional\TierModel-AuthSilos\Update-Tier0MemberServers.ps1"
-                $paw0Path = Join-Path $PSScriptRoot "optional\TierModel-AuthSilos\Update-Tier0PAWDevices.ps1"
-                $ms1Path = Join-Path $PSScriptRoot "optional\TierModel-AuthSilos\Update-Tier1MemberServers.ps1"
-                $paw1Path = Join-Path $PSScriptRoot "optional\TierModel-AuthSilos\Update-Tier1PAWDevices.ps1"
+                $ms0Path = Join-Path $execDir "Update-Tier0MemberServers.ps1"
+                $paw0Path = Join-Path $execDir "Update-Tier0PAWDevices.ps1"
+                $ms1Path = Join-Path $execDir "Update-Tier1MemberServers.ps1"
+                $paw1Path = Join-Path $execDir "Update-Tier1PAWDevices.ps1"
                 if (Test-Path $ms0Path) { & $ms0Path -ParentOU $ParentOU }
                 if (Test-Path $paw0Path) { & $paw0Path -ParentOU $ParentOU }
                 if (Test-Path $ms1Path) { & $ms1Path -ParentOU $ParentOU }
                 if (Test-Path $paw1Path) { & $paw1Path -ParentOU $ParentOU }
 
-                # 4. GPO vs LocalTask Mode
+                # 5. GPO vs LocalTask Mode
                 if ($AuthSiloTaskMode -in @('GPO', 'Both')) {
                     Write-Host "  Importing & Linking '*- Tier 0 DCs Authentication Silo' GPO..." -ForegroundColor Yellow
                     $gpoBackupPath = Join-Path $PSScriptRoot "optional\TierModel-AuthSilos\ScheduleTask-GPO"
