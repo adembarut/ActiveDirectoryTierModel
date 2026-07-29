@@ -157,6 +157,9 @@ Foreach ($OU in $aryTier1Computer){
                         Write-Log "Added $T0computer to $adoGroup" -Severity Information
                         Write-EventLog -LogName "Application" -source "Application" -EventID 0 -EntryType information -Message "Added $T0Computer to $adoGroup"
                     }
+                    try {
+                        Grant-ADAuthenticationPolicySiloAccess -Identity "*- Tier 1 Authentication Silo" -Account $T0Computer.DistinguishedName -Server $domain -ErrorAction SilentlyContinue | Out-Null
+                    } catch { }
                 }
             }
         }

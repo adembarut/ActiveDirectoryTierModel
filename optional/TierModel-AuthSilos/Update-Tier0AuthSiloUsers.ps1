@@ -254,7 +254,7 @@ foreach ($DomainName in $aryDomainName){
                         if (($oProtectedUsersGroup.members -notlike $user.DistinguishedName) -or ($oProtectedUsersGroup.Members.Count -eq 0)) {
                             Add-ADGroupMember -Identity $oProtectedUsersGroup $user -Server $DomainName
                             
-                            Write-Log "User $($user.Distiguishedname) is addeded to protected users in $Domain" -Severity Information
+                            Write-Log "User $($user.DistinguishedName) is added to protected users in $DomainName" -Severity Information
                         }
                     }
                     catch [Microsoft.ActiveDirectory.Management.ADException]{
@@ -275,6 +275,12 @@ foreach ($DomainName in $aryDomainName){
                         Write-Log -Message "The Kerberos Authenticatin Policy $KerberosPolicyName could not be added to $($user.DistinguishedName))" -Severity Error
                     }
                 }
+                
+                # Ensure user is granted access to the Kerberos AuthSilo (Permitted Accounts / Members)
+                try {
+                    Grant-ADAuthenticationPolicySiloAccess -Identity $KerberosPolicyName -Account $user -Server $DomainName -ErrorAction SilentlyContinue | Out-Null
+                    Write-Log "Granted AuthSilo access for $($user.DistinguishedName) to $KerberosPolicyName" -Severity Debug
+                } catch { }
             }
         } 
         catch [Microsoft.ActiveDirectory.Management.ADIdentityNotFoundException]{

@@ -52,6 +52,13 @@ function New-TierModelOu {
     $errors = @()
     
     try {
+        # Ensure AD: PSDrive is available in function scope
+        if (-not (Get-PSDrive -Name AD -ErrorAction SilentlyContinue)) {
+            try {
+                New-PSDrive -Name AD -PSProvider ActiveDirectoryProvider -Server $DomainController -Scope Global -ErrorAction SilentlyContinue | Out-Null
+            } catch { }
+        }
+
         if ($ouActions.Count -eq 0) {
             Write-TierModelLog -Level Info -Message "No OU creation or configuration actions in plan" -Data @{
                 CorrelationId = $CorrelationId
