@@ -20,6 +20,34 @@ Each component follows a three-step pattern:
 2. **Deploy** - Execute the deployment with `-ConfirmApply`
 3. **Audit** - Verify compliance and detect drift
 
+## ⚙️ Root vs. Custom ParentOU Architecture (Dual-Mode)
+
+The TierModel module supports two flexible placement models out of the box:
+
+1. **Option A: Custom Parent OU (e.g. `-ParentOU TierModel` or `-ParentOU EnterpriseTiers`)**
+   Deploying with `-ParentOU TierModel` places all TierModel OUs, Groups, Users, and GPO links inside `OU=TierModel,DC=domain,DC=com`.
+2. **Option B: Domain Root Deployment (Omit `-ParentOU` or `-ParentOU ""`)**
+   Omitting `-ParentOU` or passing an empty string places the entire TierModel structure directly under the Domain Root (`DC=domain,DC=com`).
+
+*Auto-Detection Feature:* Maintenance and audit scripts automatically inspect Active Directory for pre-existing `TierModel` or `_TierModel` OUs if `-ParentOU` is not explicitly supplied on the command line.
+
+## 🛡️ User & Group Exclusions (BreakGlass & Override Management)
+
+### 1. Disaster Recovery User Exclusion (`BreakGlassAdmin`)
+To ensure disaster recovery access remains available during PKI/ADFS or Kerberos AuthSilo outages:
+- `BreakGlassAdmin` and `svc-pawdomainjoin` are **excluded by default** from Kerberos AuthSilo (`msDS-AssignedAuthNPolicy`) and `Protected Users` group membership.
+- **Custom Exclusions:** You can specify additional accounts to be excluded during maintenance script execution:
+  ```powershell
+  .\optional\TierModel-AuthSilos\Update-Tier0AuthSiloUsers.ps1 -ExcludeTieredUser "svc-pawdomainjoin,BreakGlassAdmin,my-custom-admin" -ParentOU TierModel
+  ```
+
+### 2. GPO Account Restriction Overrides
+If specific service accounts require exemptions from default Tier logon blocks (Deny Network / Deny Interactive Logon):
+- Utilize the pre-created **Override Template GPOs** (e.g. `*- Tier Model Template Tier 1 Servers Account Restrictions - Override - Deny Network`).
+- Modify the `emptyGroups` or `membershipGroups` list in `config/tiermodel-gpos.json` for target override GPOs.
+
+---
+
 ## Step 1: Deploy Organizational Units
 
 ### 1.1 Plan OU Deployment
