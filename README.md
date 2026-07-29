@@ -1,182 +1,127 @@
-# 🏛️ Tier Model
+# 🏛️ Tier Model (Microsoft EAM & Zero Trust Architecture)
 
-Declarative PowerShell framework to deploy and audit an Active Directory Tier Model (OUs, Groups, Users, ACL Delegations, GPOs, ADMX, MSA/gMSA/dMSA Permissions, Windows LAPS Permissions) from a single version-controlled JSON configuration file. Supports idempotent re-runs, drift detection, and reproducible builds via pinned dependency versions.
+Declarative PowerShell framework to deploy, audit, and maintain an Active Directory Tier Model (OUs, Groups, Users, ACL Delegations, GPOs, ADMX, MSA/gMSA/dMSA Permissions, Windows LAPS, and Kerberos Authentication Policy Silos) from a single version-controlled JSON configuration file. Supports idempotent re-runs, drift detection, and reproducible builds via pinned dependency versions.
 
-> 🏗️ **Built with the Specify Framework** - Test-driven development ensuring quality and reliability
+> 🏗️ **Built with the Specify Framework** - Test-driven development ensuring enterprise quality and reliability.
 
-## 🎯 Goals
-- 🔒 Safe, repeatable deployments (WhatIf planning + convergent apply)
-- 📊 Drift auditing & reporting (hash provenance + structured findings)
-- 🧩 Modular, test-first architecture (Pester enforced)
-- 📦 Version governance for dependencies & configuration schema
+---
 
-## 📚 Documentation
+## 🎯 Key Goals & Security Baseline
+- 🔒 **Safe, Repeatable Deployments:** WhatIf planning + convergent apply across all 6 deployment phases.
+- 🛡️ **Zero Trust Protocol Enforcement:** Kerberos AuthSilos (TGT 240m lifetime + SDDL device claim restrictions).
+- 📊 **Drift Auditing & Compliance:** 100% hash provenance, multi-format audit reporting (Text, JSON, HTML, NUnit XML).
+- ⚙️ **Dual-Mode Architecture:** Deploys seamlessly directly under **Domain Root** or under a **Custom Parent OU** (e.g. `-ParentOU TierModel`).
+- 🧩 **Modular & Test-First:** 1,400+ automated Pester unit/integration test cases passing.
 
-> 📖 **Full documentation**: [GitHub Pages - Active Directory Tier Model](https://microsoft.github.io/ActiveDirectoryTierModel)
+---
 
-To get started with TierModel, please refer to our comprehensive documentation:
+## 🌟 Major Architecture Enhancements
 
-### 🚀 Getting Started
-- **[Quick Deployment Guide](https://microsoft.github.io/ActiveDirectoryTierModel/quick-deployment-guide/)** - Fast-track deployment for experienced administrators
-- **[Detailed Deployment Guide](https://microsoft.github.io/ActiveDirectoryTierModel/detailed-deployment-guide/)** - Step-by-step deployment with explanations
-- **[FAQ](https://microsoft.github.io/ActiveDirectoryTierModel/faq/)** - Frequently asked questions covering upgrades, migration from previous versions, troubleshooting, and Sentinel integration
+### 1. 📂 Expanded EAM Workload & OU Hierarchy
+Fully aligned with Microsoft Enterprise Access Model (EAM) workload separation:
+* **Tier 0 Member Servers Sub-OUs:** `Identity`, `Virtualization`, `Management`
+* **Tier 1 Member Servers Sub-OUs:** `Application`, `Database`, `Collaboration`, `Messaging`
+* **Tier 2 End-User Devices Sub-OUs:** `Desktops`, `Laptops`, `Kiosks`
+* **Tier 2 End-User Accounts Sub-OUs:** `Enabled End-Users Accounts`, `Disabled End-Users Accounts`
+* **Group Containers:** Dedicated `Admins` and `Operators` sub-OUs across Tier 0, Tier 1, and Tier 2.
 
-### 📖 Core Documentation
-- **[Deployment Methodology](https://microsoft.github.io/ActiveDirectoryTierModel/deployment-methodology/)** - Understanding the deployment approach
-- **[Drift Detection Details](https://microsoft.github.io/ActiveDirectoryTierModel/drift-detection-details/)** - Comprehensive drift auditing and remediation
-- **[Tier Model Logging](https://microsoft.github.io/ActiveDirectoryTierModel/tiermodel-logging/)** - Structured logging and diagnostics
-- **[GPO Management Strategy](https://microsoft.github.io/ActiveDirectoryTierModel/gpo-management-strategy/)** - Group Policy Object management
-- **[ADMX Management](https://microsoft.github.io/ActiveDirectoryTierModel/admx-management/)** - Administrative template handling
-- **[Conditional Principals](https://microsoft.github.io/ActiveDirectoryTierModel/conditional-principals/)** - Domain-specific principal resolution
-- **[CI/CD Integration](https://microsoft.github.io/ActiveDirectoryTierModel/ci-cd/)** - Pipeline integration and automation
-- **[Test Tag Matrix](https://microsoft.github.io/ActiveDirectoryTierModel/test-tag-matrix/)** - Pester test organization
-- **[Test Coverage](https://microsoft.github.io/ActiveDirectoryTierModel/test-coverage/)** - Comprehensive test coverage analysis and roadmap
+### 2. 🚨 Disaster Recovery & Emergency Access (`BreakGlassAdmin`)
+* Integrated **`BreakGlassAdmin`** user account and **`Break Glass Admins`** security group under Tier 0.
+* **Out-of-Band Resilience:** `BreakGlassAdmin` is automatically **excluded** from Kerberos AuthSilo (`msDS-AssignedAuthNPolicy`) and `Protected Users` enforcement, allowing administrators to recover the forest during PKI/ADFS outages using vault passwords.
 
-### 🔧 Technical Specifications
-- **[Feature Specification](specs/001-tier-model-module/spec.md)** - Complete requirements and user stories
-- **[Implementation Plan](specs/001-tier-model-module/plan.md)** - Technical architecture and design decisions
+### 3. 🛡️ Group-Based AuthSilo Exclusion Management
+* Created dedicated security groups: **`Tier 0 AuthSilo Excluded Accounts`** and **`Tier 1 AuthSilo Excluded Accounts`**.
+* Maintenance scripts (`Update-Tier0AuthSiloUsers.ps1`, `Update-Tier1AuthSiloUsers.ps1`) automatically skip members of these groups from TGT 240m restrictions, enabling dynamic exclusion management without code edits.
+
+### 4. 📝 146 GPO GPMC Comment System & Advanced Auditing
+* All 146 GPOs feature multi-section administrative documentation (`PURPOSE`, `PLACEMENT RATIONALE`, `KEY SETTINGS`, `⚠️ PLACEHOLDER GPO NOTICE`).
+* Comments are injected directly into the GPMC Details tab via `Set-TierModelGpoComment.ps1`.
+* Enforces PowerShell Script Block Logging (Event ID 4104), Advanced Audit Policy for DCs, AppLocker Audit Mode, and Windows Defender Firewall Audit Mode.
+
+---
+
+## 📚 Documentation Links
+
+> 📖 **Full Documentation**: [Active Directory Tier Model Docs](https://microsoft.github.io/ActiveDirectoryTierModel)
+
+* **[Quick Deployment Guide](docs/quick-deployment-guide.md)** - Fast-track deployment for experienced administrators
+* **[Detailed Deployment Guide](docs/detailed-deployment-guide.md)** - Step-by-step deployment with dual-mode `-ParentOU` explanations
+* **[AuthSilo Administration Guide](docs/auth-silos-guide.md)** - Complete Kerberos AuthSilo architecture, TGT 240m enforcement, and exclusion operations
+* **[Hybrid Cloud Entra Sync Guide](docs/hybrid-cloud-entra-sync.md)** - Entra ID Connect (Azure AD) OU filtering rules
+* **[Drift Detection Details](docs/drift-detection-details.md)** - Compliance auditing and drift remediation
+* **[FAQ](docs/faq.md)** - Upgrades, troubleshooting, and Sentinel integration
+
+---
+
+## 🛠️ Deployment & Maintenance Scripts
+
+| Script | Purpose | Key Parameters & Switches |
+| :--- | :--- | :--- |
+| `Deploy-TierModel.ps1` | 🚀 Primary deployment orchestrator | `-ParentOU <Name>`, `-FullDeployment`, `-IncludeMsa`, `-IncludeGmsa`, `-IncludeDmsa`, `-IncludeWinLaps` |
+| `Audit-TierModel.ps1` | 📊 Drift detection & compliance audit | `-ParentOU <Name>`, `-FullDeployment`, `-IncludeMsa`, `-IncludeGmsa`, `-IncludeDmsa`, `-IncludeWinLaps` |
+| `Deploy-TierModelAuthSilo.ps1` | 🛡️ Deploys Kerberos AuthSilos | `-PreferredDC <DC>` (Configures TGT 240m & SDDL Device Claim Binding) |
+| `Update-Tier0AuthSiloUsers.ps1` | ⚡ Syncs Tier 0 users to AuthSilo | `-ParentOU <Name>`, `-ExcludeGroupName "Tier 0 AuthSilo Excluded Accounts"`, `-ExcludeTieredUser` |
+| `Update-Tier1AuthSiloUsers.ps1` | ⚡ Syncs Tier 1 users to AuthSilo | `-ParentOU <Name>`, `-ExcludeGroupName "Tier 1 AuthSilo Excluded Accounts"`, `-ExcludeTieredUser` |
+| `Set-TierModelGpoComment.ps1` | 📝 Injects GPO documentation | `-PreferredDc <DC>` (Writes multi-section comments to GPMC Details tab) |
+
+---
+
+## 🚀 Quick Execution Guide
+
+### 1. Full Tier Model Deployment
+```powershell
+# Deploy full Tier Model infrastructure under 'TierModel' parent OU
+.\Deploy-TierModel.ps1 -PreferredDc "AD-DC-PRD-01.sec2trust.com" -FullDeployment -ConfirmApply -IncludeGmsa -IncludeMsa -IncludeDmsa -IncludeWinLaps -ParentOU "TierModel"
+```
+
+### 2. Full Compliance & Drift Audit
+```powershell
+# Audit entire Tier Model deployment against configuration baselines
+.\Audit-TierModel.ps1 -PreferredDc "AD-DC-PRD-01.sec2trust.com" -FullDeployment -IncludeGmsa -IncludeMsa -IncludeDmsa -IncludeWinLaps -ParentOU "TierModel"
+```
+
+### 3. Deploy Kerberos AuthSilos & Automated Maintenance
+```powershell
+# 1. Deploy Kerberos AuthSilo Policies
+.\optional\TierModel-AuthSilos\Deploy-TierModelAuthSilo.ps1 -PreferredDC "AD-DC-PRD-01.sec2trust.com"
+
+# 2. Sync Tier 0 & Tier 1 Users (with BreakGlass & Group Exclusions)
+.\optional\TierModel-AuthSilos\Update-Tier0AuthSiloUsers.ps1 -ParentOU "TierModel"
+.\optional\TierModel-AuthSilos\Update-Tier1AuthSiloUsers.ps1 -ParentOU "TierModel"
+
+# 3. Sync Tier 0 & Tier 1 Computers to AuthSilo Isolation Groups
+.\optional\TierModel-AuthSilos\Update-Tier0MemberServers.ps1 -ParentOU "TierModel"
+.\optional\TierModel-AuthSilos\Update-Tier0PAWDevices.ps1 -ParentOU "TierModel"
+```
+
+---
 
 ## 🧪 Testing & Quality Assurance
 
-**Current Test Status: ✅ ALL TESTS PASSING** *(Last run: July 16, 2026)*
+**Current Test Status: ✅ ALL TESTS PASSING**
 
 | Test Suite | Test Files | Test Cases | Status | Coverage |
-|------------|-----------|------------|--------|----------|
+| :--- | :---: | :---: | :---: | :---: |
 | **Unit Tests** | 17 files | 1,122 tests | ✅ 100% Pass | **90.92%** |
 | **Integration Tests** | 7 files | 279 tests | ✅ 100% Pass | **100%** |
 | **Manual Integration Tests** | 1 file | 331 tests | ✅ 100% Pass | **100%** |
 | **Total** | **25 files** | **1,732 tests** | ✅ **All Passing** | **90.92%** |
 
-### Test Coverage Highlights
-- ✅ **63/63** production files have comprehensive test coverage (5 new Windows LAPS cmdlets added in v1.2.0)
-- ✅ **100%** of all automated 1,401 test cases passing
-- ✅ **100%** of all manual 331 test cases passing
-- ✅ **90.92%** overall line coverage — all files at 80%+, MSA/gMSA/dMSA/WinLaps at 81%+
-- ✅ `Get-TierModelConditionalGroupNames` — new function with full test coverage (6 unit tests)
-- ✅ **New in v1.2.0:** Unit and integration test files for Windows LAPS (Unit.WinLapsAclOperations.Tests.ps1, Integration.WinLapsDeployment.Tests.ps1)
-- ✅ Mock-based testing (no Active Directory connectivity required)
-- ✅ WhatIf support validation across all deployment operations
-
 ### Running Tests
 ```powershell
-# Run all tests
-.\tests\Invoke-AllTests.ps1
-
-# Run unit tests only
-.\tests\Invoke-AllTests.ps1 -TestType Unit
-
-# Run integration tests only
-.\tests\Invoke-AllTests.ps1 -TestType Integration
-
-# Show only failures (useful for large test runs)
-.\tests\Invoke-AllTests.ps1 -FailedOnly
-
-# Run with detailed output
-.\tests\Invoke-AllTests.ps1 -Detailed
-```
-
-### Deployment Scripts
-| Script | Purpose | Optional Features & Parameters |
-|--------|---------|-------------------|
-| `Deploy-TierModel.ps1` | 🚀 Deploy with scoped execution | `-ParentOU <Name>` (custom root/parent OU), `-IncludeMsa`, `-IncludeGmsa`, `-IncludeDmsa` (Managed Service Account ACL delegation), `-IncludeWinLaps` (Windows LAPS ACL delegation + GPO decryptor) |
-| `Audit-TierModel.ps1` | 📊 Audit and compliance checking | `-ParentOU <Name>` (custom root/parent OU), `-IncludeMsa`, `-IncludeGmsa`, `-IncludeDmsa` (Managed Service Account ACL audit), `-IncludeWinLaps` (Windows LAPS ACL + decryptor audit) |
-| `Deploy-TierModelAuthSilo.ps1` | 🛡️ Kerberos AuthSilo deployment | Configures protocol-level TGT 240m restrictions and SDDL claim device bindings for Tier 0 and Tier 1 (See [AuthSilo Guide](docs/auth-silos-guide.md)) |
-
-### 🛡️ Kerberos Authentication Policy Silos Deployment
-```powershell
-# Deploy Kerberos AuthSilos & TGT 240m Policies
-.\optional\TierModel-AuthSilos\Deploy-TierModelAuthSilo.ps1 -PreferredDC "AD-DC-PRD-01.sec2trust.com"
-
-# Sync Tier 0 Users & Enforce Exclusions (BreakGlass & Excluded Groups)
-.\optional\TierModel-AuthSilos\Update-Tier0AuthSiloUsers.ps1 -ParentOU "TierModel"
-
-# Sync Tier 1 Users & Enforce Exclusions
-.\optional\TierModel-AuthSilos\Update-Tier1AuthSiloUsers.ps1 -ParentOU "TierModel"
-```
-
-## 🤝 Contributing
-
-Contributions are welcome! Before submitting a pull request, you **must** ensure:
-
-1. ✅ **All Pester tests pass** — the CI pipeline will reject any PR with failing tests
-2. 🧪 **New or updated tests are included** — any new code or bug fix must include corresponding test cases to maintain or improve code coverage
-3. 📊 **Code coverage stays at or above 80%** — the CI enforces a minimum coverage threshold; if your changes reduce coverage below 80%, add tests until coverage is restored
-4. 📝 Documentation is updated for any new or changed functionality
-5. 🎯 Code follows project conventions
-
-> **Note:** The packaging step will not produce a release artifact unless all tests pass and coverage meets the minimum threshold.
-
-This project welcomes contributions and suggestions.  Most contributions require you to agree to a
-Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us
-the rights to use your contribution. For details, visit [Contributor License Agreements](https://cla.opensource.microsoft.com).
-
-When you submit a pull request, a CLA bot will automatically determine whether you need to provide
-a CLA and decorate the PR appropriately (e.g., status check, comment). Simply follow the instructions
-provided by the bot. You will only need to do this once across all repos using our CLA.
-
-This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/).
-For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or
-contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
-
-### Development Setup
-```powershell
-# Clone repository
-git clone https://github.com/microsoft/ActiveDirectoryTierModel.git
-cd ActiveDirectoryTierModel
-
-# Run tests locally before submitting a PR
+# Run all Pester unit and integration tests
 .\tests\Invoke-AllTests.ps1
 ```
+
+---
 
 ## 📋 Prerequisites
 
 - **PowerShell**: 7.0+
-- **Elevation**: Administrator privileges required
-- **Domain Admin**: Membership in Domain Admins group
-- **Modules**: ActiveDirectory, GroupPolicy (see `config/dependencies.json`)
-
-*For detailed prerequisite validation, run `Test-TierModelPrerequisites`*
-
-## 🔗 Additional Resources
-
-- ❓ [Frequently Asked Questions (FAQ)](https://microsoft.github.io/ActiveDirectoryTierModel/faq/)
-- 📦 [Dependencies Configuration](config/dependencies.json)
-- 🗂️ [Configuration Schema](config/tiermodel.schema.json)
-- 📜 [Changelog](CHANGELOG.md)
+- **Privileges**: Elevated Domain Admin / Enterprise Admin privileges
+- **Target DC**: Active Directory Domain Controller with Web Services enabled
+- **Modules**: `ActiveDirectory`, `GroupPolicy` (managed dynamically)
 
 ---
 
-**Version**: 1.2.0 | **License**: MIT | **Status**: ✅ Production Ready
-
-## 🚀 Releasing
-
-This project uses **semantic versioning** (`MAJOR.MINOR.PATCH`) and tag-based releases.
-
-| Bump | When | Example |
-|------|------|---------|
-| `PATCH` (1.0.**1**) | Bug fix, typo, doc correction | Fix broken ACL rule |
-| `MINOR` (1.**1**.0) | New feature, backward-compatible | Add WinLAPS parameter |
-| `MAJOR` (**2**.0.0) | Breaking change | Restructure config schema |
-
-### Creating a release
-
-1. Ensure all changes are merged to `main` and CI is green
-2. Tag the release:
-   ```bash
-   git tag v1.1.0
-   git push origin v1.1.0
-   ```
-3. The CI pipeline will automatically:
-   - Run all tests and enforce code coverage (80% minimum)
-   - Create a `TierModel-1.1.0.zip` release asset
-   - Publish a GitHub Release with auto-generated release notes
-
-You can also create a release from the GitHub UI: **Releases → Create a new release → enter the tag name** (e.g. `v1.1.0`).
-
-## Trademarks
-
-This project may contain trademarks or logos for projects, products, or services. Authorized use of Microsoft
-trademarks or logos is subject to and must follow
-[Microsoft's Trademark & Brand Guidelines](https://www.microsoft.com/legal/intellectualproperty/trademarks/usage/general).
-Use of Microsoft trademarks or logos in modified versions of this project must not cause confusion or imply Microsoft sponsorship.
-Any use of third-party trademarks or logos are subject to those third-party's policies.
+**Version**: 1.4.0 | **License**: MIT | **Status**: ✅ Production Ready & Verified
