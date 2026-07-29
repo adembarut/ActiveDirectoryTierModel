@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-07-29
+
+### Added & Enhanced
+
+#### Expanded OU Hierarchy & EAM Workload Alignment
+- **Workload Sub-OUs**: Added `Identity`, `Virtualization`, and `Management` sub-OUs under `Tier 0 Member Servers`; added `Application`, `Database`, `Collaboration`, and `Messaging` sub-OUs under `Tier 1 Member Servers`.
+- **Device & User Sub-OUs**: Added `Desktops`, `Laptops`, and `Kiosks` sub-OUs under `Tier 2 End-User Devices`; added `Enabled End-Users Accounts` under `Tier 2 End-User Accounts`.
+- **Group Containers**: Added `Admins` and `Operators` sub-OUs under `Tier 0 Groups`, `Tier 1 Groups`, and `Tier 2 Groups` to cleanly segment administrative vs operational security groups.
+
+#### Emergency Access Account (BreakGlassAdmin)
+- **BreakGlassAdmin Identity**: Integrated `Break Glass Admins` group and `BreakGlassAdmin` user account under `Tier 0 Accounts` for disaster recovery.
+- **Disaster Recovery Exclusions**: Configured `BreakGlassAdmin` to be excluded from Kerberos AuthSilo and Protected Users enforcement by default so administrators retain recovery access if ADFS/PKI services fail.
+
+#### Hybrid Cloud Sync & Optional Script Alignment
+- **Entra ID Sync Documentation**: Created `docs/hybrid-cloud-entra-sync.md` defining Entra ID Connect OU filtering rules for hybrid cloud security.
+- **Optional Script Alignment**: Updated `Redirect-DefaultContainers.ps1`, `Enable-TierModelAuditing.ps1`, and `Update-Tier0AuthSiloUsers.ps1` to support `-ParentOU`, target `Enabled End-Users Accounts`, and respect `BreakGlassAdmin`.
+
 ## [1.2.1] - 2026-07-26
 
 ### Added & Enhanced

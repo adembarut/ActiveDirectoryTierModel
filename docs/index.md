@@ -10,6 +10,7 @@ Welcome to the Active Directory Tier Model documentation.
 ## Core Documentation
 
 - **[Deployment Methodology](deployment-methodology.md)** - Deployment strategy, validation framework, and idempotency principles
+- **[Hybrid Cloud Entra Sync](hybrid-cloud-entra-sync.md)** - Entra ID (Azure AD) Connect OU filtering and hybrid cloud security
 - **[Drift Detection](drift-detection-details.md)** - Detecting configuration drift and compliance auditing
 - **[Cmdlet Architecture](cmdlet-architecture.md)** - Modular cmdlet design for testing and maintainability
 - **[Conditional Principals](conditional-principals.md)** - Managing conditional principals and dynamic group resolution
