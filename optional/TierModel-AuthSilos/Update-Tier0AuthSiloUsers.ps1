@@ -181,13 +181,13 @@ if ($PSBoundParameters.ContainsKey('ParentOU') -eq $false -and [string]::IsNullO
     }
 }
 
-$ParentPrefix = if ([string]::IsNullOrWhiteSpace($ParentOU)) { "" } else { "OU=$($ParentOU.Trim())," }
+$ParentPrefix = if ([string]::IsNullOrWhiteSpace($ParentOU)) { "" } else { ",OU=$($ParentOU.Trim())" }
 
 if ([string]::IsNullOrWhiteSpace($TieredUsersOU)) {
-    $TieredUsersOU = "OU=Tier 0 Accounts,OU=Tier 0,OU=Tier Model Administration,${ParentPrefix}"
+    $TieredUsersOU = "OU=Tier 0 Accounts,OU=Tier 0,OU=Tier Model Administration${ParentPrefix}"
 }
 if ([string]::IsNullOrWhiteSpace($TieredServiceAccountsOU)) {
-    $TieredServiceAccountsOU = "OU=Tier 0 Service Accounts,OU=Tier 0,OU=Tier Model Administration,${ParentPrefix}"
+    $TieredServiceAccountsOU = "OU=Tier 0 Service Accounts,OU=Tier 0,OU=Tier Model Administration${ParentPrefix}"
 }
 
 #Validate the Kerberos Authentication policy exists. If not terminate the script with error code 0xA3. 
