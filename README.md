@@ -80,6 +80,19 @@ To get started with TierModel, please refer to our comprehensive documentation:
 |--------|---------|-------------------|
 | `Deploy-TierModel.ps1` | 🚀 Deploy with scoped execution | `-ParentOU <Name>` (custom root/parent OU), `-IncludeMsa`, `-IncludeGmsa`, `-IncludeDmsa` (Managed Service Account ACL delegation), `-IncludeWinLaps` (Windows LAPS ACL delegation + GPO decryptor) |
 | `Audit-TierModel.ps1` | 📊 Audit and compliance checking | `-ParentOU <Name>` (custom root/parent OU), `-IncludeMsa`, `-IncludeGmsa`, `-IncludeDmsa` (Managed Service Account ACL audit), `-IncludeWinLaps` (Windows LAPS ACL + decryptor audit) |
+| `Deploy-TierModelAuthSilo.ps1` | 🛡️ Kerberos AuthSilo deployment | Configures protocol-level TGT 240m restrictions and SDDL claim device bindings for Tier 0 and Tier 1 (See [AuthSilo Guide](docs/auth-silos-guide.md)) |
+
+### 🛡️ Kerberos Authentication Policy Silos Deployment
+```powershell
+# Deploy Kerberos AuthSilos & TGT 240m Policies
+.\optional\TierModel-AuthSilos\Deploy-TierModelAuthSilo.ps1 -PreferredDC "AD-DC-PRD-01.sec2trust.com"
+
+# Sync Tier 0 Users & Enforce Exclusions (BreakGlass & Excluded Groups)
+.\optional\TierModel-AuthSilos\Update-Tier0AuthSiloUsers.ps1 -ParentOU "TierModel"
+
+# Sync Tier 1 Users & Enforce Exclusions
+.\optional\TierModel-AuthSilos\Update-Tier1AuthSiloUsers.ps1 -ParentOU "TierModel"
+```
 
 ## 🤝 Contributing
 
