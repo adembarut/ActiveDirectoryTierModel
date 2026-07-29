@@ -13,7 +13,7 @@ param (
 	[string]$KerberosPolicyName = "*- Tier 0 Authentication Silo",
     
     [Parameter (Mandatory=$false)]
-    [string]$ExcludeTieredUser = "svc-pawdomainjoin",
+    [string]$ExcludeTieredUser = "svc-pawdomainjoin,BreakGlassAdmin",
     
     [Parameter(Mandatory=$false)]
     [switch]$MultiDomainForest = $false,
