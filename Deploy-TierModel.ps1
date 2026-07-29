@@ -2603,8 +2603,8 @@ if (($activeScopeCount -eq 0 -and $activeIncludeCount -gt 0) -or ($FullDeploymen
                         $importedGpo = Import-GPO -BackupId "36E1E245-5B6E-4EDE-AB40-9A9CE7ABD676" -Path $gpoBackupPath -TargetName "*- Tier 0 DCs Authentication Silo" -CreateIfNeeded -Server $PreferredDc
                         $domainDN = (Get-ADDomain -Server $PreferredDc).DistinguishedName
                         $dcOU = "OU=Domain Controllers,$domainDN"
-                        New-GPLink -Name "*- Tier 0 DCs Authentication Silo" -Target $dcOU -LinkEnabled Yes -Server $PreferredDc -ErrorAction SilentlyContinue | Out-Null
-                        Write-Host "  ✅ AuthSilo GPO imported and linked to Domain Controllers OU" -ForegroundColor Green
+                        New-GPLink -Name "*- Tier 0 DCs Authentication Silo" -Target $dcOU -LinkEnabled No -Server $PreferredDc -ErrorAction SilentlyContinue | Out-Null
+                        Write-Host "  ✅ AuthSilo GPO imported and linked (Disabled / LinkEnabled=No) to Domain Controllers OU" -ForegroundColor Green
                     }
                 }
 
