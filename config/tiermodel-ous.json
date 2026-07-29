@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "comment": "Organizational Unit structure for Tier Model. Rarely changes after initial deployment.",
+  "comment": "Organizational Unit structure for Tier Model. Comprehensive Enterprise Access Model (EAM) hierarchy.",
   "organizationUnits": [
     {
       "name": "Tier 0 Member Servers",
@@ -19,6 +19,30 @@
       "comment": "Tier 0: Staging server objects"
     },
     {
+      "name": "Identity",
+      "path": "OU=Tier 0 Member Servers",
+      "protectFromAccidentalDeletion": true,
+      "disableInheritance": false,
+      "blockGpoInheritance": false,
+      "comment": "Tier 0: Identity Infrastructure Servers (ADFS, Entra Connect, PKI)"
+    },
+    {
+      "name": "Virtualization",
+      "path": "OU=Tier 0 Member Servers",
+      "protectFromAccidentalDeletion": true,
+      "disableInheritance": false,
+      "blockGpoInheritance": false,
+      "comment": "Tier 0: Virtualization & Hypervisor Management Servers (Hyper-V, ESXi)"
+    },
+    {
+      "name": "Management",
+      "path": "OU=Tier 0 Member Servers",
+      "protectFromAccidentalDeletion": true,
+      "disableInheritance": false,
+      "blockGpoInheritance": false,
+      "comment": "Tier 0: Management, Security & Monitoring Servers (SIEM, Backup)"
+    },
+    {
       "name": "Tier 1 Member Servers",
       "path": "{{DOMAIN_DN}}",
       "protectFromAccidentalDeletion": true,
@@ -35,14 +59,54 @@
       "comment": "Tier 1: Staging server objects"
     },
     {
+      "name": "Application",
+      "path": "OU=Tier 1 Member Servers",
+      "protectFromAccidentalDeletion": true,
+      "disableInheritance": false,
+      "blockGpoInheritance": false,
+      "comment": "Tier 1: Line of Business Application & Web Servers (IIS, LOB Apps)"
+    },
+    {
+      "name": "Database",
+      "path": "OU=Tier 1 Member Servers",
+      "protectFromAccidentalDeletion": true,
+      "disableInheritance": false,
+      "blockGpoInheritance": false,
+      "comment": "Tier 1: Database Servers (SQL Server, Oracle, PostgreSQL)"
+    },
+    {
+      "name": "Collaboration",
+      "path": "OU=Tier 1 Member Servers",
+      "protectFromAccidentalDeletion": true,
+      "disableInheritance": false,
+      "blockGpoInheritance": false,
+      "comment": "Tier 1: Collaboration & Portal Servers (SharePoint, Portals)"
+    },
+    {
+      "name": "Messaging",
+      "path": "OU=Tier 1 Member Servers",
+      "protectFromAccidentalDeletion": true,
+      "disableInheritance": false,
+      "blockGpoInheritance": false,
+      "comment": "Tier 1: Messaging & Mail Servers (Exchange, Relay)"
+    },
+    {
       "name": "Tier 2 End-User Accounts",
       "path": "{{DOMAIN_DN}}",
       "protectFromAccidentalDeletion": true,
       "disableInheritance": true,
       "blockGpoInheritance": true,
-      "comment": "Tier 2: End-User Accounts"
+      "comment": "Tier 2: End-User Accounts Container"
     },
-        {
+    {
+      "name": "Enabled End-Users Accounts",
+      "path": "OU=Tier 2 End-User Accounts",
+      "protectFromAccidentalDeletion": true,
+      "disableInheritance": false,
+      "blockGpoInheritance": false,
+      "comment": "Tier 2: Active Standard End-User Accounts"
+    },
+    {
       "name": "Disabled End-Users Accounts",
       "path": "OU=Tier 2 End-User Accounts",
       "protectFromAccidentalDeletion": true,
@@ -50,13 +114,37 @@
       "blockGpoInheritance": false,
       "comment": "Tier 2: Disabled End-User Accounts"
     },
-        {
+    {
       "name": "Tier 2 End-User Devices",
       "path": "{{DOMAIN_DN}}",
       "protectFromAccidentalDeletion": true,
       "disableInheritance": true,
       "blockGpoInheritance": true,
-      "comment": "Tier 2: End-User Devices"
+      "comment": "Tier 2: End-User Devices Container"
+    },
+    {
+      "name": "Desktops",
+      "path": "OU=Tier 2 End-User Devices",
+      "protectFromAccidentalDeletion": true,
+      "disableInheritance": false,
+      "blockGpoInheritance": false,
+      "comment": "Tier 2: End-User Desktop Workstations"
+    },
+    {
+      "name": "Laptops",
+      "path": "OU=Tier 2 End-User Devices",
+      "protectFromAccidentalDeletion": true,
+      "disableInheritance": false,
+      "blockGpoInheritance": false,
+      "comment": "Tier 2: End-User Laptop Computers (Mobile Endpoints)"
+    },
+    {
+      "name": "Kiosks",
+      "path": "OU=Tier 2 End-User Devices",
+      "protectFromAccidentalDeletion": true,
+      "disableInheritance": false,
+      "blockGpoInheritance": false,
+      "comment": "Tier 2: Kiosk & Shared Terminal Devices"
     },
     {
       "name": "Disabled End-User Devices",
@@ -72,7 +160,7 @@
       "protectFromAccidentalDeletion": true,
       "disableInheritance": true,
       "blockGpoInheritance": true,
-      "comment": "Tier 2: End-User Groups"
+      "comment": "Tier 2: End-User Groups Container"
     },
     {
       "name": "Contacts",
@@ -144,7 +232,23 @@
       "protectFromAccidentalDeletion": true,
       "disableInheritance": false,
       "blockGpoInheritance": false,
-      "comment": "Tier 0: Groups"
+      "comment": "Tier 0: Groups Container"
+    },
+    {
+      "name": "Admins",
+      "path": "OU=Tier 0 Groups,OU=Tier 0,OU=Tier Model Administration",
+      "protectFromAccidentalDeletion": true,
+      "disableInheritance": false,
+      "blockGpoInheritance": false,
+      "comment": "Tier 0: Administrator Security Groups"
+    },
+    {
+      "name": "Operators",
+      "path": "OU=Tier 0 Groups,OU=Tier 0,OU=Tier Model Administration",
+      "protectFromAccidentalDeletion": true,
+      "disableInheritance": false,
+      "blockGpoInheritance": false,
+      "comment": "Tier 0: Operator Security Groups"
     },
     {
       "name": "Tier 0 PAW Devices",
@@ -184,7 +288,23 @@
       "protectFromAccidentalDeletion": true,
       "disableInheritance": false,
       "blockGpoInheritance": false,
-      "comment": "Tier 1: Groups"
+      "comment": "Tier 1: Groups Container"
+    },
+    {
+      "name": "Admins",
+      "path": "OU=Tier 1 Groups,OU=Tier 1,OU=Tier Model Administration",
+      "protectFromAccidentalDeletion": true,
+      "disableInheritance": false,
+      "blockGpoInheritance": false,
+      "comment": "Tier 1: Administrator Security Groups"
+    },
+    {
+      "name": "Operators",
+      "path": "OU=Tier 1 Groups,OU=Tier 1,OU=Tier Model Administration",
+      "protectFromAccidentalDeletion": true,
+      "disableInheritance": false,
+      "blockGpoInheritance": false,
+      "comment": "Tier 1: Operator Security Groups"
     },
     {
       "name": "Tier 1 PAW Devices",
@@ -224,7 +344,23 @@
       "protectFromAccidentalDeletion": true,
       "disableInheritance": false,
       "blockGpoInheritance": false,
-      "comment": "Tier 2: Groups"
+      "comment": "Tier 2: Groups Container"
+    },
+    {
+      "name": "Admins",
+      "path": "OU=Tier 2 Groups,OU=Tier 2,OU=Tier Model Administration",
+      "protectFromAccidentalDeletion": true,
+      "disableInheritance": false,
+      "blockGpoInheritance": false,
+      "comment": "Tier 2: Administrator Security Groups"
+    },
+    {
+      "name": "Operators",
+      "path": "OU=Tier 2 Groups,OU=Tier 2,OU=Tier Model Administration",
+      "protectFromAccidentalDeletion": true,
+      "disableInheritance": false,
+      "blockGpoInheritance": false,
+      "comment": "Tier 2: Operator Security Groups"
     },
     {
       "name": "Tier 2 PAW Devices",
