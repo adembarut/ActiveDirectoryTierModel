@@ -149,27 +149,49 @@ function New-TierModelUser {
                     }
                     
                 } catch {
-                    Write-TierModelLog -Level Error -Message "Failed to create user account" -Data @{
-                        Name = $action.Name
-                        Path = $action.Path
-                        Exception = $_.Exception.Message
-                        CorrelationId = $CorrelationId
-                    } | Out-Null
-                    
-                    Write-Host "  ERROR: Failed to create User '$($action.Name)' - $($_.Exception.Message)" -ForegroundColor Red
-                    $errors += @{
-                        Timestamp = Get-Date
-                        Category = 'Execution'
-                        Code = 'UserCreationFailed'
-                        Message = $_.Exception.Message
-                        Context = @{
-                            Action = $action.Action
+                    if ($_.Exception.Message -like "*already exists*") {
+                        Write-Host "  ⚠️  User already exists: $userName ($userSamAccountName)" -ForegroundColor Yellow
+                        try {
+                            if ($userDescription) {
+                                Set-ADUser -Identity $userSamAccountName -Description $userDescription -Server $DomainController -ErrorAction SilentlyContinue
+                            }
+                            if ($userInfo) {
+                                Set-ADUser -Identity $userSamAccountName -Replace @{ info = $userInfo } -Server $DomainController -ErrorAction SilentlyContinue
+                            }
+                            if ($userData.PSObject.Properties.Name -contains 'memberOf' -and $userData.memberOf) {
+                                foreach ($groupName in $userData.memberOf) {
+                                    try {
+                                        Add-ADGroupMember -Identity $groupName -Members $userSamAccountName -Server $DomainController -Confirm:$false | Out-Null
+                                    } catch {}
+                                }
+                            }
+                            $executed++
+                        } catch {
+                            $skipped++
+                        }
+                    } else {
+                        Write-TierModelLog -Level Error -Message "Failed to create user account" -Data @{
                             Name = $action.Name
                             Path = $action.Path
+                            Exception = $_.Exception.Message
+                            CorrelationId = $CorrelationId
+                        } | Out-Null
+                        
+                        Write-Host "  ERROR: Failed to create User '$($action.Name)' - $($_.Exception.Message)" -ForegroundColor Red
+                        $errors += @{
+                            Timestamp = Get-Date
+                            Category = 'Execution'
+                            Code = 'UserCreationFailed'
+                            Message = $_.Exception.Message
+                            Context = @{
+                                Action = $action.Action
+                                Name = $action.Name
+                                Path = $action.Path
+                            }
                         }
+                        $failed++
+                        $converged = $false
                     }
-                    $failed++
-                    $converged = $false
                 }
             }
         }

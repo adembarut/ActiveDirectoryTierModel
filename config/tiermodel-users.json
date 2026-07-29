@@ -25,6 +25,18 @@
       ],
       "comment": "Used for automated provision of Tier 1 Member Servers computers into the Tier 1 Server Staging OU for domain join, else leave disabled",
       "info": "=======================================================\r\nTIER MODEL IDENTITY DOCUMENTATION\r\n=======================================================\r\nSCOPE      : Tier 1 (Management Plane)\r\nROLE       : Tier 1 Provisioning Service Account\r\nPRIVILEGES : Delegated rights to join Tier 1 Member\r\n             Server objects into Tier 1 Server Staging\r\n             OU. Disabled by default.\r\n-------------------------------------------------------\r\nCHANGE & AUDIT TRACKING:\r\n- Version  : TierModel v2.0 (Microsoft EAM)\r\n- Managed  : Infrastructure Security Team\r\n- History  : Standard TierModel Deployment\r\n======================================================="
+    },
+    {
+      "samAccountName": "BreakGlassAdmin",
+      "displayName": "BreakGlassAdmin",
+      "ouPath": "OU=Tier 0 Accounts,OU=Tier 0,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
+      "description": "Emergency break-fix account. Used ONLY when Tier 0 Admins or AuthSilo services are unavailable.",
+      "enabled": false,
+      "memberOf": [
+        "BreakGlassAdmins"
+      ],
+      "comment": "Emergency break-fix account (Break Glass). Excluded from AuthSilo & Protected Users for disaster recovery.",
+      "info": "=======================================================\r\nTIER MODEL IDENTITY DOCUMENTATION\r\n=======================================================\r\nSCOPE      : Tier 0 (Control Plane Root)\r\nROLE       : Emergency Access Account (Break Glass)\r\nPRIVILEGES : Emergency break-fix access. Excluded from\r\n             AuthSilo and Protected Users. Keep password\r\n             in physical safe. Disabled by default.\r\n-------------------------------------------------------\r\nCHANGE & AUDIT TRACKING:\r\n- Version  : TierModel v2.0 (Microsoft EAM)\r\n- Managed  : AD Security Architecture Team\r\n- History  : Standard TierModel Deployment\r\n======================================================="
     }
   ]
 }

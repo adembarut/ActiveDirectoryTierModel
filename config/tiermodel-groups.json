@@ -13,6 +13,16 @@
       "info": "=======================================================\r\nTIER MODEL IDENTITY DOCUMENTATION\r\n=======================================================\r\nSCOPE      : Tier 0 (Control Plane)\r\nROLE       : PAW Provisioning Domain Join Group\r\nPRIVILEGES : Delegated rights to join Privileged Access\r\n             Workstation (PAW) computer objects into\r\n             Tier 0 PAW Staging OU.\r\n-------------------------------------------------------\r\nCHANGE & AUDIT TRACKING:\r\n- Version  : TierModel v2.0 (Microsoft EAM)\r\n- Managed  : AD Security Architecture Team\r\n- History  : Standard TierModel Deployment\r\n======================================================="
     },
     {
+      "name": "Break Glass Admins",
+      "samaccountname": "BreakGlassAdmins",
+      "description": "PAW Emergency Access Accounts (Break Glass)",
+      "groupscope": "Global",
+      "groupcategory": "Security",
+      "path": "OU=Tier 0 Groups,OU=Tier 0,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
+      "comment": "Emergency access group for AD forest break-fix operations",
+      "info": "=======================================================\r\nTIER MODEL IDENTITY DOCUMENTATION\r\n=======================================================\r\nSCOPE      : Tier 0 (Control Plane Root)\r\nROLE       : Emergency Access Group (Break Glass)\r\nPRIVILEGES : Member of Domain Admins. Used ONLY when\r\n             Tier 0 PKI/AuthSilo services fail.\r\n-------------------------------------------------------\r\nCHANGE & AUDIT TRACKING:\r\n- Version  : TierModel v2.0 (Microsoft EAM)\r\n- Managed  : AD Security Architecture Team\r\n- History  : Standard TierModel Deployment\r\n======================================================="
+    },
+    {
       "name": "Tier 0 Admins",
       "samaccountname": "Tier0Admins",
       "description": "Members of this group administer Tier 0, 1, and 2 resources",
