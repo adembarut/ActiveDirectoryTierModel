@@ -57,7 +57,7 @@ Fully aligned with Microsoft Enterprise Access Model (EAM) workload separation:
 
 | Script | Purpose | Key Parameters & Switches |
 | :--- | :--- | :--- |
-| `Deploy-TierModel.ps1` | 🚀 Primary deployment orchestrator | `-ParentOU <Name>`, `-FullDeployment`, `-IncludeMsa`, `-IncludeGmsa`, `-IncludeDmsa`, `-IncludeWinLaps` |
+| `Deploy-TierModel.ps1` | 🚀 Primary deployment orchestrator | `-ParentOU <Name>`, `-FullDeployment`, `-IncludeMsa`, `-IncludeGmsa`, `-IncludeDmsa`, `-IncludeWinLaps`, `-IncludeAuthSilo`, `-AuthSiloTaskMode GPO\|LocalTask\|Both` |
 | `Audit-TierModel.ps1` | 📊 Drift detection & compliance audit | `-ParentOU <Name>`, `-FullDeployment`, `-IncludeMsa`, `-IncludeGmsa`, `-IncludeDmsa`, `-IncludeWinLaps` |
 | `Deploy-TierModelAuthSilo.ps1` | 🛡️ Deploys Kerberos AuthSilos | `-PreferredDC <DC>` (Configures TGT 240m & SDDL Device Claim Binding) |
 | `Update-Tier0AuthSiloUsers.ps1` | ⚡ Syncs Tier 0 users to AuthSilo | `-ParentOU <Name>`, `-ExcludeGroupName "Tier 0 AuthSilo Excluded Accounts"`, `-ExcludeTieredUser` |
@@ -80,18 +80,16 @@ Fully aligned with Microsoft Enterprise Access Model (EAM) workload separation:
 .\Audit-TierModel.ps1 -PreferredDc "AD-DC-PRD-01.sec2trust.com" -FullDeployment -IncludeGmsa -IncludeMsa -IncludeDmsa -IncludeWinLaps -ParentOU "TierModel"
 ```
 
-### 3. Deploy Kerberos AuthSilos & Automated Maintenance
+### 3. Integrated Full Deployment with Kerberos AuthSilos & GPO Task Scheduler
 ```powershell
-# 1. Deploy Kerberos AuthSilo Policies
-.\optional\TierModel-AuthSilos\Deploy-TierModelAuthSilo.ps1 -PreferredDC "AD-DC-PRD-01.sec2trust.com"
-
-# 2. Sync Tier 0 & Tier 1 Users (with BreakGlass & Group Exclusions)
-.\optional\TierModel-AuthSilos\Update-Tier0AuthSiloUsers.ps1 -ParentOU "TierModel"
-.\optional\TierModel-AuthSilos\Update-Tier1AuthSiloUsers.ps1 -ParentOU "TierModel"
-
-# 3. Sync Tier 0 & Tier 1 Computers to AuthSilo Isolation Groups
-.\optional\TierModel-AuthSilos\Update-Tier0MemberServers.ps1 -ParentOU "TierModel"
-.\optional\TierModel-AuthSilos\Update-Tier0PAWDevices.ps1 -ParentOU "TierModel"
+# Perform full TierModel deployment + Kerberos AuthSilos + GPO Task Scheduler automation in a single command
+.\Deploy-TierModel.ps1 -PreferredDc "AD-DC-PRD-01.sec2trust.com" `
+                       -FullDeployment `
+                       -ConfirmApply `
+                       -IncludeGmsa -IncludeMsa -IncludeDmsa -IncludeWinLaps `
+                       -IncludeAuthSilo `
+                       -AuthSiloTaskMode GPO `
+                       -ParentOU "TierModel"
 ```
 
 ---

@@ -112,6 +112,11 @@ param(
     [switch]$IncludeGmsa,
     [switch]$IncludeDmsa,
     [switch]$IncludeWinLaps,
+    [switch]$IncludeAuthSilo,
+    
+    [Parameter()]
+    [ValidateSet('GPO', 'LocalTask', 'Both')]
+    [string]$AuthSiloTaskMode = 'GPO',
     
     [Parameter()]
     [string]$AdmlLanguage = 'en-US',
@@ -137,17 +142,17 @@ $ErrorActionPreference = 'Stop'
 # Validate that only one deployment scope parameter is specified
 $scopeParameters = @($OuOnly, $GroupOnly, $UserOnly, $GposOnly, $OuAclsOnly, $AdmxOnly, $FullDeployment)
 $activeScopeCount = @($scopeParameters | Where-Object { $_ }).Count
-$includeParameters = @($IncludeMsa, $IncludeGmsa, $IncludeDmsa, $IncludeWinLaps)
+$includeParameters = @($IncludeMsa, $IncludeGmsa, $IncludeDmsa, $IncludeWinLaps, $IncludeAuthSilo)
 $activeIncludeCount = @($includeParameters | Where-Object { $_ }).Count
 
 if ($activeScopeCount -eq 0 -and $activeIncludeCount -eq 0) {
-    Write-Error "You must specify exactly one deployment scope parameter (-OuOnly, -GroupOnly, -UserOnly, -GposOnly, -OuAclsOnly, -AdmxOnly, -FullDeployment) or one or more -Include* switches (-IncludeMsa, -IncludeGmsa, -IncludeDmsa, -IncludeWinLaps)." -ErrorAction Stop
+    Write-Error "You must specify exactly one deployment scope parameter (-OuOnly, -GroupOnly, -UserOnly, -GposOnly, -OuAclsOnly, -AdmxOnly, -FullDeployment) or one or more -Include* switches (-IncludeMsa, -IncludeGmsa, -IncludeDmsa, -IncludeWinLaps, -IncludeAuthSilo)." -ErrorAction Stop
 }
 elseif ($activeScopeCount -gt 1) {
     Write-Error "You can only specify one deployment scope parameter at a time. Cannot combine -OuOnly, -GroupOnly, -UserOnly, -GposOnly, -OuAclsOnly, -AdmxOnly, and -FullDeployment" -ErrorAction Stop
 }
 elseif ($activeIncludeCount -gt 0 -and $activeScopeCount -eq 1 -and -not $FullDeployment) {
-    Write-Error "-IncludeMsa, -IncludeGmsa, -IncludeDmsa, and -IncludeWinLaps can only be used standalone or combined with -FullDeployment. They cannot be used with -OuOnly, -GroupOnly, -UserOnly, -GposOnly, -OuAclsOnly, or -AdmxOnly." -ErrorAction Stop
+    Write-Error "-IncludeMsa, -IncludeGmsa, -IncludeDmsa, -IncludeWinLaps, and -IncludeAuthSilo can only be used standalone or combined with -FullDeployment. They cannot be used with -OuOnly, -GroupOnly, -UserOnly, -GposOnly, -OuAclsOnly, or -AdmxOnly." -ErrorAction Stop
 }
 
 Write-Host "Deploy TierModel orchestration starting." -ForegroundColor Cyan
@@ -2546,6 +2551,81 @@ if ($activeScopeCount -eq 0 -and $activeIncludeCount -gt 0) {
                 }
             } else {
                 Write-Host "  ✅ Windows LAPS ACL delegations already up to date" -ForegroundColor Green
+            }
+        }
+    }
+    
+    if ($IncludeAuthSilo) {
+        Write-Host "`nPhase: Kerberos Authentication Policy Silos" -ForegroundColor Cyan
+        if (-not $ConfirmApply) {
+            Write-Host "  [WhatIf] Deploy Kerberos AuthSilos & TGT 240m policies" -ForegroundColor Yellow
+            Write-Host "  [WhatIf] Sync Tier 0 & Tier 1 users to AuthSilo (with BreakGlass & Group Exclusions)" -ForegroundColor Yellow
+            Write-Host "  [WhatIf] Sync Tier 0 & Tier 1 Member Servers and PAW Devices to AuthSilo groups" -ForegroundColor Yellow
+            if ($AuthSiloTaskMode -in @('GPO', 'Both')) {
+                Write-Host "  [WhatIf] Import and link '*- Tier 0 DCs Authentication Silo' GPO to Domain Controllers OU" -ForegroundColor Yellow
+            }
+            if ($AuthSiloTaskMode -in @('LocalTask', 'Both')) {
+                Write-Host "  [WhatIf] Register local Task Scheduler jobs on $PreferredDc" -ForegroundColor Yellow
+            }
+            $standaloneDeploymentPlan.TotalActions += 4
+        } else {
+            try {
+                # 1. Deploy AuthSilo Policies
+                Write-Host "  Deploying Kerberos AuthSilo Policies..." -ForegroundColor Yellow
+                $siloDeployPath = Join-Path $PSScriptRoot "optional\TierModel-AuthSilos\Deploy-TierModelAuthSilo.ps1"
+                if (Test-Path $siloDeployPath) {
+                    & $siloDeployPath -PreferredDC $PreferredDc
+                }
+                
+                # 2. Sync Users (Tier 0 & Tier 1)
+                Write-Host "  Syncing Tier 0 & Tier 1 AuthSilo Users..." -ForegroundColor Yellow
+                $u0Path = Join-Path $PSScriptRoot "optional\TierModel-AuthSilos\Update-Tier0AuthSiloUsers.ps1"
+                $u1Path = Join-Path $PSScriptRoot "optional\TierModel-AuthSilos\Update-Tier1AuthSiloUsers.ps1"
+                if (Test-Path $u0Path) { & $u0Path -ParentOU $ParentOU -ExcludeGroupName "Tier 0 AuthSilo Excluded Accounts" -ExcludeTieredUser "svc-pawdomainjoin,BreakGlassAdmin" }
+                if (Test-Path $u1Path) { & $u1Path -ParentOU $ParentOU -ExcludeGroupName "Tier 1 AuthSilo Excluded Accounts" -ExcludeTieredUser "svc-t1srvdomainjoin" }
+                
+                # 3. Sync Computers
+                Write-Host "  Syncing Tier 0 & Tier 1 Computers & PAW Devices..." -ForegroundColor Yellow
+                $ms0Path = Join-Path $PSScriptRoot "optional\TierModel-AuthSilos\Update-Tier0MemberServers.ps1"
+                $paw0Path = Join-Path $PSScriptRoot "optional\TierModel-AuthSilos\Update-Tier0PAWDevices.ps1"
+                $ms1Path = Join-Path $PSScriptRoot "optional\TierModel-AuthSilos\Update-Tier1MemberServers.ps1"
+                $paw1Path = Join-Path $PSScriptRoot "optional\TierModel-AuthSilos\Update-Tier1PAWDevices.ps1"
+                if (Test-Path $ms0Path) { & $ms0Path -ParentOU $ParentOU }
+                if (Test-Path $paw0Path) { & $paw0Path -ParentOU $ParentOU }
+                if (Test-Path $ms1Path) { & $ms1Path -ParentOU $ParentOU }
+                if (Test-Path $paw1Path) { & $paw1Path -ParentOU $ParentOU }
+
+                # 4. GPO vs LocalTask Mode
+                if ($AuthSiloTaskMode -in @('GPO', 'Both')) {
+                    Write-Host "  Importing & Linking '*- Tier 0 DCs Authentication Silo' GPO..." -ForegroundColor Yellow
+                    $gpoBackupPath = Join-Path $PSScriptRoot "optional\TierModel-AuthSilos\ScheduleTask-GPO"
+                    if (Test-Path $gpoBackupPath) {
+                        $importedGpo = Import-GPO -BackupGpoName "*- Tier 0 DCs Authentication Silo" -Path $gpoBackupPath -TargetName "*- Tier 0 DCs Authentication Silo" -CreateIfNeeded -Server $PreferredDc
+                        $domainDN = (Get-ADDomain -Server $PreferredDc).DistinguishedName
+                        $dcOU = "OU=Domain Controllers,$domainDN"
+                        New-GPLink -Name "*- Tier 0 DCs Authentication Silo" -Target $dcOU -LinkEnabled Yes -Server $PreferredDc -ErrorAction SilentlyContinue | Out-Null
+                        Write-Host "  ✅ AuthSilo GPO imported and linked to Domain Controllers OU" -ForegroundColor Green
+                    }
+                }
+
+                if ($AuthSiloTaskMode -in @('LocalTask', 'Both')) {
+                    Write-Host "  Registering local Task Scheduler jobs..." -ForegroundColor Yellow
+                    $localTaskPath = Join-Path $PSScriptRoot "optional\TierModel-AuthSilos\ScheduleTask-Local"
+                    if (Test-Path $localTaskPath) {
+                        Get-ChildItem -Path $localTaskPath -Filter "*.xml" | ForEach-Object {
+                            $taskName = $_.BaseName
+                            Register-ScheduledTask -TaskName $taskName -Xml (Get-Content $_.FullName -Raw) -Force -ErrorAction SilentlyContinue | Out-Null
+                        }
+                        Write-Host "  ✅ Local Task Scheduler jobs registered" -ForegroundColor Green
+                    }
+                }
+                
+                $standaloneTotalApplied += 1
+                Write-Host "  ✅ AuthSilo deployment and automation completed successfully" -ForegroundColor Green
+            } catch {
+                Write-Host "  ❌ AuthSilo deployment error: $($_.Exception.Message)" -ForegroundColor Red
+                $standaloneTotalErrors += 1
+                $standaloneConverged = $false
             }
         }
     }
