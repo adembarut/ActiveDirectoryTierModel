@@ -183,6 +183,11 @@ Foreach ($OU in $aryTier1Computer){
                     }
                     if ($isExcluded) {
                         Write-Log "Skipping excluded computer $($T0Computer.DistinguishedName) from AuthSilo enforcement" -Severity Information
+                        try {
+                            Revoke-ADAuthenticationPolicySiloAccess -Identity $KerberosPolicyName -Account $T0Computer -Server $domain -ErrorAction SilentlyContinue | Out-Null
+                            Set-ADComputer $T0Computer -AuthenticationPolicy $null -Server $domain -Confirm:$false -ErrorAction SilentlyContinue
+                            Set-ADAccountAuthenticationPolicySilo -Identity $T0Computer.DistinguishedName -RemoveAuthenticationPolicySilo -Server $domain -Confirm:$false -ErrorAction SilentlyContinue
+                        } catch { }
                         continue
                     }
 

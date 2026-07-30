@@ -242,6 +242,11 @@ foreach ($DomainName in $aryDomainName){
 
                 if ($isExcluded) {
                     Write-Log -Message "Skipping excluded user $($user.DistinguishedName) from AuthSilo & Protected Users enforcement" -Severity Information
+                    try {
+                        Revoke-ADAuthenticationPolicySiloAccess -Identity $KerberosPolicyName -Account $user -Server $DomainName -ErrorAction SilentlyContinue | Out-Null
+                        Set-ADUser $user -AuthenticationPolicy $null -Server $DomainName -Confirm:$false -ErrorAction SilentlyContinue
+                        Set-ADAccountAuthenticationPolicySilo -Identity $user.DistinguishedName -RemoveAuthenticationPolicySilo -Server $DomainName -Confirm:$false -ErrorAction SilentlyContinue
+                    } catch { }
                     continue
                 }
                 
