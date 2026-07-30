@@ -52,10 +52,12 @@ function New-TierModelOu {
     $errors = @()
     
     try {
-        # Ensure AD: PSDrive is available in function scope
+        # Ensure AD: PSDrive is available (ActiveDirectory module creates it but only when the module
+        # is imported in the current runspace — verify and create if missing)
         if (-not (Get-PSDrive -Name AD -ErrorAction SilentlyContinue)) {
             try {
-                New-PSDrive -Name AD -PSProvider ActiveDirectoryProvider -Server $DomainController -Scope Global -ErrorAction SilentlyContinue | Out-Null
+                Import-Module ActiveDirectory -ErrorAction SilentlyContinue
+                New-PSDrive -Name AD -PSProvider ActiveDirectory -Root '' -Server $DomainController -Scope Global -ErrorAction SilentlyContinue | Out-Null
             } catch { }
         }
 
