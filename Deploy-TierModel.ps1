@@ -1925,14 +1925,24 @@ if ($FullDeployment) {
                     if (-not (Test-Path $sysvolScriptsDir)) {
                         New-Item -ItemType Directory -Path $sysvolScriptsDir -Force | Out-Null
                     }
+                    if ($sysvolLocalDir -and -not (Test-Path $sysvolLocalDir)) {
+                        New-Item -ItemType Directory -Path $sysvolLocalDir -Force | Out-Null
+                    }
                     $siloSourceDir = Join-Path $PSScriptRoot "optional\TierModel-AuthSilos"
+                    if (-not (Test-Path $siloSourceDir)) {
+                        $siloSourceDir = Join-Path (Get-Location) "optional\TierModel-AuthSilos"
+                    }
                     if (Test-Path $siloSourceDir) {
                         Get-ChildItem -Path $siloSourceDir -Filter "*.ps1" | ForEach-Object {
                             Copy-Item -Path $_.FullName -Destination $sysvolScriptsDir -Force
+                            if (Test-Path $sysvolLocalDir) {
+                                Copy-Item -Path $_.FullName -Destination $sysvolLocalDir -Force
+                            }
                         }
                         if (Test-Path $sysvolLocalDir) {
                             Get-ChildItem -Path $sysvolLocalDir -Filter "*.ps1" | Unblock-File -ErrorAction SilentlyContinue
                         }
+                        Get-ChildItem -Path $sysvolScriptsDir -Filter "*.ps1" | Unblock-File -ErrorAction SilentlyContinue
                         Write-Host "  ✅ AuthSilo scripts deployed to SYSVOL: $sysvolScriptsDir" -ForegroundColor Green
                     }
 
@@ -2664,14 +2674,24 @@ if ($activeScopeCount -eq 0 -and $activeIncludeCount -gt 0) {
                 if (-not (Test-Path $sysvolScriptsDir)) {
                     New-Item -ItemType Directory -Path $sysvolScriptsDir -Force | Out-Null
                 }
+                if ($sysvolLocalDir -and -not (Test-Path $sysvolLocalDir)) {
+                    New-Item -ItemType Directory -Path $sysvolLocalDir -Force | Out-Null
+                }
                 $siloSourceDir = Join-Path $PSScriptRoot "optional\TierModel-AuthSilos"
+                if (-not (Test-Path $siloSourceDir)) {
+                    $siloSourceDir = Join-Path (Get-Location) "optional\TierModel-AuthSilos"
+                }
                 if (Test-Path $siloSourceDir) {
                     Get-ChildItem -Path $siloSourceDir -Filter "*.ps1" | ForEach-Object {
                         Copy-Item -Path $_.FullName -Destination $sysvolScriptsDir -Force
+                        if (Test-Path $sysvolLocalDir) {
+                            Copy-Item -Path $_.FullName -Destination $sysvolLocalDir -Force
+                        }
                     }
                     if (Test-Path $sysvolLocalDir) {
                         Get-ChildItem -Path $sysvolLocalDir -Filter "*.ps1" | Unblock-File -ErrorAction SilentlyContinue
                     }
+                    Get-ChildItem -Path $sysvolScriptsDir -Filter "*.ps1" | Unblock-File -ErrorAction SilentlyContinue
                     Write-Host "  ✅ AuthSilo scripts deployed to SYSVOL: $sysvolScriptsDir" -ForegroundColor Green
                 }
 
