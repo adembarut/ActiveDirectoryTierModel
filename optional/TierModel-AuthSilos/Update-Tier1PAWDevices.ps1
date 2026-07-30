@@ -9,6 +9,12 @@ Param (
     [Parameter(Mandatory=$false)]
     [string]$TieredComputerOU,
 
+    [Parameter(Mandatory=$false)]
+    [string]$KerberosPolicyName = "*- Tier 1 Authentication Silo",
+
+    [Parameter(Mandatory=$false)]
+    [string]$ExcludeComputer = "",
+
     [Parameter (Mandatory=$false)]
     [bool]$MultiDomainForest = $false
 )
@@ -147,19 +153,43 @@ Foreach ($OU in $aryTier1Computer){
                 Write-Log "Missing the Tier 1 computer OU $OU,$((Get-ADDomain -Server $domain).DistinguishedName)" -Severity Warning
                 Write-EventLog -LogName "Application" -source "Application" -EventId 0 -EntryType Error -Message "Missing the Tier 1 computer OU $OU,$((Get-ADDomain -Server $domain).DistinguishedName)"
             } else{
-                $T0computers = @(Get-ADObject -Filter {ObjectClass -eq "Computer"} -SearchBase "$OU,$((Get-ADDomain -Server $domain).DistinguishedName)" -Properties ObjectSid -SearchScope Subtree -Server $domain)
-                #validate the computer ain the Tier 1 OU are member of the Tier 1 computers group
+                $T0computers = @(Get-ADComputer -SearchBase "$OU,$((Get-ADDomain -Server $domain).DistinguishedName)" -Filter * -Properties msDS-AssignedAuthNPolicySilo -SearchScope Subtree -Server $domain)
+                #validate the computers in the Tier 1 OU are members of the Tier 1 computers group
                 Write-Log -Message "Found $($T0computers.Count) Tier 1 computers in $domain" -Severity Debug
                 Foreach ($T0Computer in $T0computers){
-                    if ($adoGroup.member -notcontains $T0Computer ){
+                    # Check if computer is explicitly excluded
+                    $isExcluded = $false
+                    if ($ExcludeComputer) {
+                        foreach ($exName in ($ExcludeComputer -split ',')) {
+                            if ($exName -and ($T0Computer.SamAccountName -ireq "$($exName.Trim())$" -or $T0Computer.SamAccountName -ireq $exName.Trim() -or $T0Computer.Name -ieq $exName.Trim())) {
+                                $isExcluded = $true; break
+                            }
+                        }
+                    }
+                    if ($isExcluded) {
+                        Write-Log "Skipping excluded computer $($T0Computer.DistinguishedName) from AuthSilo enforcement" -Severity Information
+                        continue
+                    }
+
+                    if ($adoGroup.member -notcontains $T0Computer.DistinguishedName){
                         $adoGroup.member += $T0Computer.DistinguishedName
                         $bGroupMemberchanged = $true
-                        Write-Log "Added $T0computer to $adoGroup" -Severity Information
-                        Write-EventLog -LogName "Application" -source "Application" -EventID 0 -EntryType information -Message "Added $T0Computer to $adoGroup"
+                        Write-Log "Added $($T0Computer.Name) to $($adoGroup.Name)" -Severity Information
+                        Write-EventLog -LogName "Application" -source "Application" -EventID 0 -EntryType information -Message "Added $($T0Computer.Name) to $($adoGroup.Name)"
                     }
+                    # Grant Silo access (Permitted Accounts)
                     try {
-                        Grant-ADAuthenticationPolicySiloAccess -Identity "*- Tier 1 Authentication Silo" -Account $T0Computer.DistinguishedName -Server $domain -ErrorAction SilentlyContinue | Out-Null
+                        Grant-ADAuthenticationPolicySiloAccess -Identity $KerberosPolicyName -Account $T0Computer.DistinguishedName -Server $domain -ErrorAction SilentlyContinue | Out-Null
                     } catch { }
+                    # Assign Authentication Policy Silo to the computer object
+                    try {
+                        if ($T0Computer.'msDS-AssignedAuthNPolicySilo' -ne (Get-ADAuthenticationPolicySilo -Identity $KerberosPolicyName -Server $domain).DistinguishedName) {
+                            Set-ADAccountAuthenticationPolicySilo -Identity $T0Computer.DistinguishedName -AuthenticationPolicySilo $KerberosPolicyName -Server $domain
+                            Write-Log "Assigned AuthSilo '$KerberosPolicyName' to $($T0Computer.Name)" -Severity Information
+                        }
+                    } catch {
+                        Write-Log "Could not assign AuthSilo to $($T0Computer.Name): $($_.Exception.Message)" -Severity Warning
+                    }
                 }
             }
         }
@@ -191,6 +221,11 @@ try{
             Write-Log "Unexpected computer object $member removed from $($adoGroup.DistinguishedName)" -Severity Warning
             Write-EventLog -LogName "Application" -source "Application" -EventID 0 -EntryType Warning -Message "Unexpected computer object $member removed from $($adoGroup.DistinguishedName)"
             $bGroupMemberchanged = $true
+            # Also revoke Silo access for computers removed from the OU scope
+            try {
+                Revoke-ADAuthenticationPolicySiloAccess -Identity $KerberosPolicyName -Account $member -ErrorAction SilentlyContinue | Out-Null
+                Write-Log "Revoked AuthSilo access for $member" -Severity Information
+            } catch { }
         }
     }
     if ($bGroupMemberchanged){
