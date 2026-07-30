@@ -1989,6 +1989,12 @@ if ($FullDeployment) {
                             Write-Host "  Importing & Linking '*- Tier 0 DCs Authentication Silo' GPO..." -ForegroundColor Yellow
                             $gpoBackupPath = Join-Path $PSScriptRoot "optional\TierModel-AuthSilos\ScheduleTask-GPO"
                             if (Test-Path $gpoBackupPath) {
+                                $xmlPath = Join-Path $gpoBackupPath "{36E1E245-5B6E-4EDE-AB40-9A9CE7ABD676}\DomainSysvol\GPO\Machine\Preferences\ScheduledTasks\ScheduledTasks.xml"
+                                if (Test-Path $xmlPath) {
+                                    $xmlContent = Get-Content $xmlPath -Raw
+                                    $updatedXml = [regex]::Replace($xmlContent, "C:\\Windows\\SYSVOL\\sysvol\\[^\\]+\\scripts", "C:\Windows\SYSVOL\sysvol\$adDomainRoot\scripts", [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)
+                                    $updatedXml | Set-Content $xmlPath -Encoding UTF8 -Force
+                                }
                                 $importedGpo = Import-GPO -BackupId "36E1E245-5B6E-4EDE-AB40-9A9CE7ABD676" -Path $gpoBackupPath -TargetName "*- Tier 0 DCs Authentication Silo" -CreateIfNeeded -Server $PreferredDc
                                 $domainDN = (Get-ADDomain -Server $PreferredDc).DistinguishedName
                                 $dcOU = "OU=Domain Controllers,$domainDN"
@@ -2731,6 +2737,12 @@ if ($activeScopeCount -eq 0 -and $activeIncludeCount -gt 0) {
                     Write-Host "  Importing & Linking '*- Tier 0 DCs Authentication Silo' GPO..." -ForegroundColor Yellow
                     $gpoBackupPath = Join-Path $PSScriptRoot "optional\TierModel-AuthSilos\ScheduleTask-GPO"
                     if (Test-Path $gpoBackupPath) {
+                        $xmlPath = Join-Path $gpoBackupPath "{36E1E245-5B6E-4EDE-AB40-9A9CE7ABD676}\DomainSysvol\GPO\Machine\Preferences\ScheduledTasks\ScheduledTasks.xml"
+                        if (Test-Path $xmlPath) {
+                            $xmlContent = Get-Content $xmlPath -Raw
+                            $updatedXml = [regex]::Replace($xmlContent, "C:\\Windows\\SYSVOL\\sysvol\\[^\\]+\\scripts", "C:\Windows\SYSVOL\sysvol\$adDomainRoot\scripts", [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)
+                            $updatedXml | Set-Content $xmlPath -Encoding UTF8 -Force
+                        }
                         $importedGpo = Import-GPO -BackupId "36E1E245-5B6E-4EDE-AB40-9A9CE7ABD676" -Path $gpoBackupPath -TargetName "*- Tier 0 DCs Authentication Silo" -CreateIfNeeded -Server $PreferredDc
                         $domainDN = (Get-ADDomain -Server $PreferredDc).DistinguishedName
                         $dcOU = "OU=Domain Controllers,$domainDN"

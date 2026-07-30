@@ -74,9 +74,10 @@ param (
 function Write-Log {
     param (
         # status message
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory=$false)]
+        [AllowEmptyString()]
         [string]
-        $Message,
+        $Message = "",
         #Severity of the message
         [Parameter (Mandatory = $true)]
         [Validateset('Error', 'Warning', 'Information', 'Debug') ]
@@ -164,7 +165,11 @@ if (Test-Path $LogFile){
     }
 }
 #endregion
-Write-Log -Message $MyInvocation.Line -Severity Debug
+if ([string]::IsNullOrWhiteSpace($MyInvocation.Line)) {
+    Write-Log -Message "Executing $($MyInvocation.MyCommand.Name)" -Severity Debug
+} else {
+    Write-Log -Message $MyInvocation.Line -Severity Debug
+}
 
 # Dynamic ParentOU & Root OU Resolution
 if ($PSBoundParameters.ContainsKey('ParentOU') -eq $false -and [string]::IsNullOrWhiteSpace($ParentOU)) {
