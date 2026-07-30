@@ -195,7 +195,7 @@ Foreach ($OU in $aryTier0Computer){
                     try {
                         $targetPolicyDN = (Get-ADAuthenticationPolicy -Identity $KerberosPolicyName -Server $domain).DistinguishedName
                         if ($T0Computer.'msDS-AssignedAuthNPolicy' -ne $targetPolicyDN) {
-                            Set-ADComputer $T0Computer -AuthenticationPolicy $KerberosPolicyName -Server $domain
+                            Set-ADComputer $T0Computer -AuthenticationPolicy $KerberosPolicyName -Server $domain -Confirm:$false
                             Write-Log "Assigned Kerberos AuthN Policy '$KerberosPolicyName' to $($T0Computer.Name)" -Severity Information
                         }
                     } catch {
@@ -205,7 +205,7 @@ Foreach ($OU in $aryTier0Computer){
                     try {
                         $targetSiloDN = (Get-ADAuthenticationPolicySilo -Identity $KerberosPolicyName -Server $domain).DistinguishedName
                         if ($T0Computer.'msDS-AssignedAuthNPolicySilo' -ne $targetSiloDN) {
-                            Set-ADAccountAuthenticationPolicySilo -Identity $T0Computer.DistinguishedName -AuthenticationPolicySilo $KerberosPolicyName -Server $domain
+                            Set-ADAccountAuthenticationPolicySilo -Identity $T0Computer.DistinguishedName -AuthenticationPolicySilo $KerberosPolicyName -Server $domain -Confirm:$false
                             Write-Log "Assigned AuthSilo '$KerberosPolicyName' to $($T0Computer.Name)" -Severity Information
                         }
                     } catch {

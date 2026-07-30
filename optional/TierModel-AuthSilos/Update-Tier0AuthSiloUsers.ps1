@@ -281,6 +281,14 @@ foreach ($DomainName in $aryDomainName){
                     Grant-ADAuthenticationPolicySiloAccess -Identity $KerberosPolicyName -Account $user -Server $DomainName -ErrorAction SilentlyContinue | Out-Null
                     Write-Log "Granted AuthSilo access for $($user.DistinguishedName) to $KerberosPolicyName" -Severity Debug
                 } catch { }
+                # Ensure user is assigned to Kerberos AuthSilo policy (msDS-AssignedAuthNPolicySilo)
+                try {
+                    $targetSiloDN = (Get-ADAuthenticationPolicySilo -Identity $KerberosPolicyName -Server $DomainName).DistinguishedName
+                    if ($user.'msDS-AssignedAuthNPolicySilo' -ne $targetSiloDN) {
+                        Set-ADAccountAuthenticationPolicySilo -Identity $user.DistinguishedName -AuthenticationPolicySilo $KerberosPolicyName -Server $DomainName -Confirm:$false
+                        Write-Log "Assigned AuthSilo '$KerberosPolicyName' to $($user.DistinguishedName)" -Severity Information
+                    }
+                } catch { }
             }
         } 
         catch [Microsoft.ActiveDirectory.Management.ADIdentityNotFoundException]{
