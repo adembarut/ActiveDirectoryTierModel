@@ -1,5 +1,4 @@
 [cmdletbinding(SupportsShouldProcess=$true)]
-$ConfirmPreference = 'None'
 Param (
     [Parameter (Mandatory=$false)]
     [String]$TieredComputerGroupName  = "Tier1PAWDevices",
@@ -22,6 +21,8 @@ Param (
     [Parameter (Mandatory=$false)]
     [bool]$MultiDomainForest = $false
 )
+
+$ConfirmPreference = 'None'
 
 <#
 .Synopsis

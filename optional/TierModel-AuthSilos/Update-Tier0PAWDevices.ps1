@@ -1,4 +1,3 @@
-$ConfirmPreference = 'None'
 [cmdletbinding(SupportsShouldProcess=$true)]
 Param (
     [Parameter (Mandatory=$false)]
@@ -22,6 +21,8 @@ Param (
     [Parameter (Mandatory=$false)]
     [bool]$MultiDomainForest = $false
 )
+
+$ConfirmPreference = 'None'
 
 <#
 .Synopsis
