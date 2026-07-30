@@ -57,6 +57,14 @@ function Test-TierModelOu {
     $mismatchCount = 0
     
     try {
+        # Ensure AD: PSDrive is available for Get-Acl operations
+        if (-not (Get-PSDrive -Name AD -ErrorAction SilentlyContinue)) {
+            try {
+                Import-Module ActiveDirectory -ErrorAction SilentlyContinue
+                New-PSDrive -Name AD -PSProvider ActiveDirectory -Root '' -Server $DomainController -Scope Global -ErrorAction SilentlyContinue | Out-Null
+            } catch { }
+        }
+
         # Resolve domain DN
         $domainDN = Resolve-TierModelDomainDN -DomainController $DomainController
         
