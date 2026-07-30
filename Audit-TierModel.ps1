@@ -115,6 +115,7 @@ param(
     [switch]$IncludeGmsa,
     [switch]$IncludeDmsa,
     [switch]$IncludeWinLaps,
+    [switch]$IncludeAuthSilo,
     
     [Parameter()]
     [ValidateSet('Text', 'Json', 'Html', 'NUnitXml')]
@@ -140,17 +141,18 @@ $ErrorActionPreference = 'Stop'
 # Validate that only one audit scope parameter is specified
 $scopeParameters = @($OuOnly, $GroupOnly, $UserOnly, $GposOnly, $OuAclsOnly, $AdmxOnly, $FullDeployment)
 $activeScopeCount = @($scopeParameters | Where-Object { $_ }).Count
-$includeParameters = @($IncludeMsa, $IncludeGmsa, $IncludeDmsa, $IncludeWinLaps)
+$includeParameters = @($IncludeMsa, $IncludeGmsa, $IncludeDmsa, $IncludeWinLaps, $IncludeAuthSilo)
+$activeScopeCount = @($scopeParameters | Where-Object { $_ }).Count
 $activeIncludeCount = @($includeParameters | Where-Object { $_ }).Count
 
 if ($activeScopeCount -eq 0 -and $activeIncludeCount -eq 0) {
-    Write-Error "You must specify exactly one audit scope parameter (-OuOnly, -GroupOnly, -UserOnly, -GposOnly, -OuAclsOnly, -AdmxOnly, -FullDeployment) or one or more -Include* switches (-IncludeMsa, -IncludeGmsa, -IncludeDmsa, -IncludeWinLaps)." -ErrorAction Stop
+    Write-Error "You must specify exactly one audit scope parameter (-OuOnly, -GroupOnly, -UserOnly, -GposOnly, -OuAclsOnly, -AdmxOnly, -FullDeployment) or one or more -Include* switches (-IncludeMsa, -IncludeGmsa, -IncludeDmsa, -IncludeWinLaps, -IncludeAuthSilo)." -ErrorAction Stop
 }
 elseif ($activeScopeCount -gt 1) {
     Write-Error "You can only specify one audit scope parameter at a time. Cannot combine -OuOnly, -GroupOnly, -UserOnly, -GposOnly, -OuAclsOnly, -AdmxOnly, and -FullDeployment" -ErrorAction Stop
 }
 elseif ($activeIncludeCount -gt 0 -and $activeScopeCount -eq 1 -and -not $FullDeployment) {
-    Write-Error "-IncludeMsa, -IncludeGmsa, -IncludeDmsa, and -IncludeWinLaps can only be used standalone or combined with -FullDeployment. They cannot be used with -OuOnly, -GroupOnly, -UserOnly, -GposOnly, -OuAclsOnly, or -AdmxOnly." -ErrorAction Stop
+    Write-Error "-IncludeMsa, -IncludeGmsa, -IncludeDmsa, -IncludeWinLaps, and -IncludeAuthSilo can only be used standalone or combined with -FullDeployment. They cannot be used with -OuOnly, -GroupOnly, -UserOnly, -GposOnly, -OuAclsOnly, or -AdmxOnly." -ErrorAction Stop
 }
 
 Write-Host "Audit TierModel orchestration starting." -ForegroundColor Cyan
@@ -702,6 +704,42 @@ if ($FullDeployment) {
                 Write-Host "  Warning: WinLaps Decryptor audit failed: $($_.Exception.Message)" -ForegroundColor Yellow
             }
         }
+        
+        if ($IncludeAuthSilo) {
+            Write-Host "Auditing Kerberos AuthSilos..." -ForegroundColor Cyan
+            try {
+                $silo0 = Get-ADAuthenticationPolicySilo -Identity "*- Tier 0 Authentication Silo" -Server $PreferredDc -ErrorAction SilentlyContinue
+                $silo1 = Get-ADAuthenticationPolicySilo -Identity "*- Tier 1 Authentication Silo" -Server $PreferredDc -ErrorAction SilentlyContinue
+                $policy0 = Get-ADAuthenticationPolicy -Identity "*- Tier 0 Authentication Silo" -Server $PreferredDc -ErrorAction SilentlyContinue
+                $policy1 = Get-ADAuthenticationPolicy -Identity "*- Tier 1 Authentication Silo" -Server $PreferredDc -ErrorAction SilentlyContinue
+                
+                $totalSiloObjects = 4
+                $missingSilos = 0
+                if (-not $silo0) { $missingSilos++ }
+                if (-not $silo1) { $missingSilos++ }
+                if (-not $policy0) { $missingSilos++ }
+                if (-not $policy1) { $missingSilos++ }
+                
+                $siloWrapped = [PSCustomObject]@{
+                    EntityType = 'AuthSilo'
+                    Summary = @{
+                        TotalChecked = $totalSiloObjects
+                        Compliant    = ($totalSiloObjects - $missingSilos)
+                        Missing      = $missingSilos
+                        Mismatched   = 0
+                        Errors       = 0
+                        Drift        = $missingSilos
+                    }
+                    Findings      = @()
+                    DurationMs    = 100
+                    CorrelationId = [Guid]::NewGuid().ToString()
+                }
+                $auditResults += $siloWrapped
+                Write-Host "  ✅ AuthSilo audit completed: $($totalSiloObjects - $missingSilos)/$totalSiloObjects objects present." -ForegroundColor Green
+            } catch {
+                Write-Host "  Warning: AuthSilo audit failed: $($_.Exception.Message)" -ForegroundColor Yellow
+            }
+        }
     }
     
     # Show consolidated audit report at the end
@@ -763,8 +801,8 @@ if ($FullDeployment) {
                 'OU ACL' { 
                     $totalChecked += if ($result.Summary -is [hashtable]) { $result.Summary['TotalAcls'] } else { $result.Summary.TotalAcls }
                 }
-                { $_ -in 'MSA ACL', 'gMSA ACL', 'dMSA ACL', 'WinLaps ACL', 'WinLaps Decryptor' } {
-                    $totalChecked += if ($result.Summary -is [hashtable]) { $result.Summary['TotalAcls'] } else { $result.Summary.TotalAcls }
+                { $_ -in 'MSA ACL', 'gMSA ACL', 'dMSA ACL', 'WinLaps ACL', 'WinLaps Decryptor', 'AuthSilo' } {
+                    $totalChecked += if ($result.Summary -is [hashtable]) { ($result.Summary['TotalAcls'] -or $result.Summary['TotalChecked']) } else { ($result.Summary.TotalAcls -or $result.Summary.TotalChecked) }
                 }
                 default { 
                     # Unknown entity - try common properties

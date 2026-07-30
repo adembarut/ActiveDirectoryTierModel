@@ -945,4 +945,20 @@ Describe "Get-TierModelGroup – Extended Coverage" -Tag "Unit", "Group" {
         $result.Errors[0].Category       | Should -Be 'Execution'
         ($result.Errors[0].Message)      | Should -Match 'Group plan generation failed'
     }
+
+    Context "Production Groups Config Verification" {
+        It "Should contain all required Exclusion and BreakGlass groups in config/tiermodel-groups.json" {
+            $configPath = Join-Path $PSScriptRoot '..\config\tiermodel-groups.json'
+            $groupConfig = Get-Content $configPath -Raw | ConvertFrom-Json
+            $groupNames = $groupConfig.groups.name
+
+            $groupNames | Should -Contain "Tier 0 AuthSilo Excluded Accounts"
+            $groupNames | Should -Contain "Tier 0 AuthSilo Excluded Devices"
+            $groupNames | Should -Contain "Tier 1 AuthSilo Excluded Accounts"
+            $groupNames | Should -Contain "Tier 1 AuthSilo Excluded Devices"
+            $groupNames | Should -Contain "Break Glass Admins"
+            $groupNames | Should -Contain "PAW Domain Join"
+            $groupNames | Should -Contain "Tier 1 Server Domain Join"
+        }
+    }
 }
