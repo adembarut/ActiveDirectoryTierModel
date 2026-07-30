@@ -215,6 +215,14 @@ if ($PSVersionTable.PSVersion.Major -lt 7) {
 # Import TierModel module with all public functions
 Import-Module (Join-Path $PSScriptRoot 'Modules\TierModel\TierModel.psd1') -Force -Verbose:$false
 
+# Ensure AD: PSDrive is available for Get-Acl/Set-Acl operations
+if (-not (Get-PSDrive -Name AD -ErrorAction SilentlyContinue)) {
+    try {
+        Import-Module ActiveDirectory -ErrorAction SilentlyContinue
+        New-PSDrive -Name AD -PSProvider ActiveDirectory -Root '' -Server $PreferredDc -Scope Global -ErrorAction SilentlyContinue | Out-Null
+    } catch { }
+}
+
 Write-Host "TierModel module loaded successfully." -ForegroundColor Green
 
 # Auto-detect ParentOU if not explicitly specified

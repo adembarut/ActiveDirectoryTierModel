@@ -165,10 +165,22 @@ function New-TierModelOu {
                                     CorrelationId = $CorrelationId
                                 } | Out-Null
                                 
-                                # Get the current ACL and disable inheritance
-                                $acl = Get-Acl -Path "AD:\$($newOU.DistinguishedName)"
-                                $acl.SetAccessRuleProtection($true, $true)  # Block inheritance, preserve existing permissions
-                                Set-Acl -Path "AD:\$($newOU.DistinguishedName)" -AclObject $acl | Out-Null
+                                # Use native ActiveDirectory cmdlet with nTSecurityDescriptor to set inheritance protection cleanly
+                                try {
+                                    $targetOuObj = Get-ADOrganizationalUnit -Identity $newOU.DistinguishedName -Server $DomainController -Properties nTSecurityDescriptor
+                                    $sd = $targetOuObj.nTSecurityDescriptor
+                                    $sd.SetAccessRuleProtection($true, $true)  # Block inheritance, preserve existing permissions
+                                    Set-ADOrganizationalUnit -Identity $newOU.DistinguishedName -Server $DomainController -Replace @{ nTSecurityDescriptor = $sd } -ErrorAction Stop
+                                } catch {
+                                    # Fallback to Get-Acl / Set-Acl on AD: provider
+                                    if (-not (Get-PSDrive -Name AD -ErrorAction SilentlyContinue)) {
+                                        Import-Module ActiveDirectory -ErrorAction SilentlyContinue
+                                        New-PSDrive -Name AD -PSProvider ActiveDirectory -Root '' -Server $DomainController -Scope Global -ErrorAction SilentlyContinue | Out-Null
+                                    }
+                                    $acl = Get-Acl -Path "AD:\$($newOU.DistinguishedName)"
+                                    $acl.SetAccessRuleProtection($true, $true)  # Block inheritance, preserve existing permissions
+                                    Set-Acl -Path "AD:\$($newOU.DistinguishedName)" -AclObject $acl | Out-Null
+                                }
                                 $actionsPerformed += 'DisableSecurityInheritance'
                                 
                                 Write-TierModelLog -Level Info -Message "OuDisableSecInheritSuccess" -Data @{
