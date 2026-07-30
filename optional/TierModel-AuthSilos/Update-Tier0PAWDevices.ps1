@@ -161,7 +161,7 @@ Foreach ($OU in $aryTier0Computer){
                     $isExcluded = $false
                     if ($ExcludeComputer) {
                         foreach ($exName in ($ExcludeComputer -split ',')) {
-                            if ($exName -and ($T0Computer.SamAccountName -ireq "$($exName.Trim())$" -or $T0Computer.SamAccountName -ireq $exName.Trim() -or $T0Computer.Name -ieq $exName.Trim())) {
+                            if ($exName -and ($T0Computer.SamAccountName -ieq $exName.Trim() -or $T0Computer.Name -ieq $exName.Trim())) {
                                 $isExcluded = $true; break
                             }
                         }
