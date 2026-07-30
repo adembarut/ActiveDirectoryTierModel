@@ -1,3 +1,4 @@
+$ConfirmPreference = 'None'
 [cmdletbinding(SupportsShouldProcess=$true)]
 Param (
     [Parameter (Mandatory=$false)]
@@ -184,7 +185,7 @@ Foreach ($OU in $aryTier0Computer){
                     if ($isExcluded) {
                         Write-Log "Skipping excluded computer $($T0Computer.DistinguishedName) from AuthSilo enforcement" -Severity Information
                         try {
-                            Revoke-ADAuthenticationPolicySiloAccess -Identity $KerberosPolicyName -Account $T0Computer -Server $domain -ErrorAction SilentlyContinue | Out-Null
+                            Revoke-ADAuthenticationPolicySiloAccess -Identity $KerberosPolicyName -Account $T0Computer -Server $domain -Confirm:$false -ErrorAction SilentlyContinue | Out-Null
                             Set-ADComputer $T0Computer -AuthenticationPolicy $null -Server $domain -Confirm:$false -ErrorAction SilentlyContinue
                             Set-ADAccountAuthenticationPolicySilo -Identity $T0Computer.DistinguishedName -RemoveAuthenticationPolicySilo -Server $domain -Confirm:$false -ErrorAction SilentlyContinue
                         } catch { }
@@ -199,7 +200,7 @@ Foreach ($OU in $aryTier0Computer){
                     }
                     # Grant Silo access (Permitted Accounts)
                     try {
-                        Grant-ADAuthenticationPolicySiloAccess -Identity $KerberosPolicyName -Account $T0Computer.DistinguishedName -Server $domain -ErrorAction SilentlyContinue | Out-Null
+                        Grant-ADAuthenticationPolicySiloAccess -Identity $KerberosPolicyName -Account $T0Computer.DistinguishedName -Server $domain -Confirm:$false -ErrorAction SilentlyContinue | Out-Null
                     } catch { }
                     # Assign Authentication Policy to the computer object (Required for ADAC Accounts tab visibility)
                     try {
@@ -232,8 +233,8 @@ Foreach ($OU in $aryTier0Computer){
 }
 try{
     if ($bGroupMemberchanged){
-        Set-ADObject -Instance $adoGroup    
-        Write-Log "Adding new computers to the Tier 0 computer group" -Severity Debug
+        Set-ADObject -Instance $adoGroup -Confirm:$false
+        Write-Log "Adding new computers to the Tier 0 PAW computer group" -Severity Debug
         $bGroupMemberchanged = $false
     }
     #remove any object from Tier 0 computer group who is not member of the tier 0 computers list
@@ -254,14 +255,14 @@ try{
             $bGroupMemberchanged = $true
             # Also revoke Silo access for computers removed from the OU scope
             try {
-                Revoke-ADAuthenticationPolicySiloAccess -Identity $KerberosPolicyName -Account $member -ErrorAction SilentlyContinue | Out-Null
+                Revoke-ADAuthenticationPolicySiloAccess -Identity $KerberosPolicyName -Account $member -Confirm:$false -ErrorAction SilentlyContinue | Out-Null
                 Write-Log "Revoked AuthSilo access for $member" -Severity Information
             } catch { }
         }
     }
     if ($bGroupMemberchanged){
         $adoGroup.member = $updatedGroupMembers
-        Set-ADObject -Instance $adoGroup
+        Set-ADObject -Instance $adoGroup -Confirm:$false
         Write-Log "Removing non-tier 0 computers from the Tier 0 computer group" -Severity Debug
     }
 }

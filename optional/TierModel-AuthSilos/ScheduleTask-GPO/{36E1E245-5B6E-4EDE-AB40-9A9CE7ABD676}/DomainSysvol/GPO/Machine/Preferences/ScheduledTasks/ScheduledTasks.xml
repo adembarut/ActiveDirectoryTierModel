@@ -9,3 +9,4 @@
 					<Exec><Command>powershell.exe</Command><Arguments>-executionpolicy bypass -NoProfile -NonInteractive -file C:\Windows\SYSVOL\sysvol\sec2trust.com\scripts\TierModelAuthSilos\Update-Tier1PAWDevices.ps1</Arguments></Exec>
 				</Actions></Task></Properties></TaskV2>
 </ScheduledTasks>
+

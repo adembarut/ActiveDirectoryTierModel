@@ -13,7 +13,7 @@ param (
 	[string]$KerberosPolicyName = "*- Tier 1 Authentication Silo",
     
     [Parameter (Mandatory=$false)]
-    [string]$ExcludeTieredUser = "svc-t1srvdomainjoin",
+    [string]$ExcludeTieredUser = "svc-pawdomainjoin,BreakGlassAdmin",
 
     [Parameter (Mandatory=$false)]
     [string]$ExcludeGroupName = "Tier 1 AuthSilo Excluded Accounts",
@@ -27,6 +27,8 @@ param (
     [Parameter(Mandatory=$false)]
     [switch]$ExcludeProtectedUsersGroup
 )
+
+$ConfirmPreference = 'None'
 <#
 .Synopsis
     This scripts is meant to maintain the Tier 1 Users and ensure they are assigned to the Tier 1 Authentication Silo policy.
@@ -243,7 +245,7 @@ foreach ($DomainName in $aryDomainName){
                 if ($isExcluded) {
                     Write-Log -Message "Skipping excluded user $($user.DistinguishedName) from AuthSilo & Protected Users enforcement" -Severity Information
                     try {
-                        Revoke-ADAuthenticationPolicySiloAccess -Identity $KerberosPolicyName -Account $user -Server $DomainName -ErrorAction SilentlyContinue | Out-Null
+                        Revoke-ADAuthenticationPolicySiloAccess -Identity $KerberosPolicyName -Account $user -Server $DomainName -Confirm:$false -ErrorAction SilentlyContinue | Out-Null
                         Set-ADUser $user -AuthenticationPolicy $null -Server $DomainName -Confirm:$false -ErrorAction SilentlyContinue
                         Set-ADAccountAuthenticationPolicySilo -Identity $user.DistinguishedName -RemoveAuthenticationPolicySilo -Server $DomainName -Confirm:$false -ErrorAction SilentlyContinue
                     } catch { }
@@ -252,7 +254,7 @@ foreach ($DomainName in $aryDomainName){
                 
                 if (($user.UserAccountControl -BAND 1048576) -ne 1048576){
                     try {
-                        Set-ADAccountControl -Identity $user -AccountNotDelegated $True
+                        Set-ADAccountControl -Identity $user -AccountNotDelegated $True -Confirm:$false
                         Write-Log "Mark $($User.DistinguishedName) as sensitive and cannot be delegated" -Severity Information
                     }
                     catch [Microsoft.ActiveDirectory.Management.ADException]{
@@ -262,7 +264,7 @@ foreach ($DomainName in $aryDomainName){
                 if ($ExcludeProtectedUsersGroup -ne $true){
                     try{
                         if (($oProtectedUsersGroup.members -notlike $user.DistinguishedName) -or ($oProtectedUsersGroup.Members.Count -eq 0)) {
-                            Add-ADGroupMember -Identity $oProtectedUsersGroup $user -Server $DomainName
+                            Add-ADGroupMember -Identity $oProtectedUsersGroup $user -Server $DomainName -Confirm:$false
                             
                             Write-Log "User $($user.DistinguishedName) is added to protected users in $DomainName" -Severity Information
                         }
@@ -275,11 +277,11 @@ foreach ($DomainName in $aryDomainName){
                 if ($user.'msDS-AssignedAuthNPolicy' -ne $KerberosAuthenticationPolicy.DistinguishedName){
                     try {
                         Write-Log "Adding Kerberos Authentication Policy $KerberosPolicyName on $User" -Severity Information
-                        Set-ADUser $user -AuthenticationPolicy $KerberosPolicyName -Server $DomainName
+                        Set-ADUser $user -AuthenticationPolicy $KerberosPolicyName -Server $DomainName -Confirm:$false
                         #if the Kerberos Authentication policy is assigned to a user, the user will be marked as "This user is sensitive and cannot be delegated"
                         #This attribute will only applied to the user, while adding the KerbAuthPol. If the attribute will be removed afterwards it will not be 
                         #reapplied
-                        Set-ADAccountControl -Identity $user -AccountNotDelegated $True
+                        Set-ADAccountControl -Identity $user -AccountNotDelegated $True -Confirm:$false
                     }
                     catch {
                         Write-Log -Message "The Kerberos Authenticatin Policy $KerberosPolicyName could not be added to $($user.DistinguishedName))" -Severity Error
@@ -288,7 +290,7 @@ foreach ($DomainName in $aryDomainName){
                 
                 # Ensure user is granted access to the Kerberos AuthSilo (Permitted Accounts / Members)
                 try {
-                    Grant-ADAuthenticationPolicySiloAccess -Identity $KerberosPolicyName -Account $user -Server $DomainName -ErrorAction SilentlyContinue | Out-Null
+                    Grant-ADAuthenticationPolicySiloAccess -Identity $KerberosPolicyName -Account $user -Server $DomainName -Confirm:$false -ErrorAction SilentlyContinue | Out-Null
                     Write-Log "Granted AuthSilo access for $($user.DistinguishedName) to $KerberosPolicyName" -Severity Debug
                 } catch { }
                 # Ensure user is assigned to Kerberos AuthSilo policy (msDS-AssignedAuthNPolicySilo)

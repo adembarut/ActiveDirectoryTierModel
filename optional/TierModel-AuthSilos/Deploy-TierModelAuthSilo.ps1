@@ -35,6 +35,8 @@ param (
 # Import the Active Directory module
 Import-Module ActiveDirectory
 
+$ConfirmPreference = 'None'
+
 # Variables
 $T0KerberosAuthenticationPolicy = '*- Tier 0 Authentication Silo'
 $T1KerberosAuthenticationPolicy = '*- Tier 1 Authentication Silo'
@@ -60,7 +62,7 @@ try {
     -Description $T0KerberosAuthenticationPolicyDescription `
     -UserAllowedToAuthenticateFrom $T0AllowToAuthenticateFromSDDL `
     -ProtectedFromAccidentalDeletion $true `
-    -Server $PreferredDC                         
+    -Server $PreferredDC -Confirm:$false                        
     }
 }
 catch [Microsoft.ActiveDirectory.Management.ADIdentityNotFoundException]{
@@ -93,7 +95,7 @@ try {
     -Description $T1KerberosAuthenticationPolicyDescription `
     -UserAllowedToAuthenticateFrom $T1AllowToAuthenticateFromSDDL `
     -ProtectedFromAccidentalDeletion $true `
-    -Server $PreferredDC                            
+    -Server $PreferredDC -Confirm:$false                           
     }
 }
 catch [Microsoft.ActiveDirectory.Management.ADIdentityNotFoundException]{
@@ -119,7 +121,7 @@ try {
             -ServiceAuthenticationPolicy $T0KerberosAuthenticationPolicy `
             -Description $T0KerberosAuthenticationPolicyDescription `
             -ProtectedFromAccidentalDeletion $true `
-            -Server $PreferredDC
+            -Server $PreferredDC -Confirm:$false
         Write-Host "  ✅ Created Authentication Policy Silo: $T0KerberosAuthenticationPolicy" -ForegroundColor Green
     }
 } catch {
@@ -137,7 +139,7 @@ try {
             -ServiceAuthenticationPolicy $T1KerberosAuthenticationPolicy `
             -Description $T1KerberosAuthenticationPolicyDescription `
             -ProtectedFromAccidentalDeletion $true `
-            -Server $PreferredDC
+            -Server $PreferredDC -Confirm:$false
         Write-Host "  ✅ Created Authentication Policy Silo: $T1KerberosAuthenticationPolicy" -ForegroundColor Green
     }
 } catch {

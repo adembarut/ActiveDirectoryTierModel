@@ -259,7 +259,10 @@ if ($ConfirmApply -and -not $Force) {
     Write-Host ""
     Write-Host "Proceeding with deployment execution..." -ForegroundColor Green
     Write-Host ""
+    $ConfirmPreference = 'None'
 }
+
+$ConfirmPreference = 'None'
 
 if ($Logging) {
     # Initialize the log file with deployment start information
