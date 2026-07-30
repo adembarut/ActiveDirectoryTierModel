@@ -156,7 +156,7 @@ Foreach ($OU in $aryTier0Computer){
                 Write-Log "Missing the Tier 0 computer OU $OU,$((Get-ADDomain -Server $domain).DistinguishedName)" -Severity Warning
                 Write-EventLog -LogName "Application" -source "Application" -EventId 0 -EntryType Error -Message "Missing the Tier 0 computer OU $OU,$((Get-ADDomain -Server $domain).DistinguishedName)"
             } else{
-                $T0computers = @(Get-ADComputer -SearchBase "$OU,$((Get-ADDomain -Server $domain).DistinguishedName)" -Filter * -Properties msDS-AssignedAuthNPolicySilo,MemberOf -SearchScope Subtree -Server $domain)
+                $T0computers = @(Get-ADComputer -SearchBase "$OU,$((Get-ADDomain -Server $domain).DistinguishedName)" -Filter * -Properties msDS-AssignedAuthNPolicy,msDS-AssignedAuthNPolicySilo,MemberOf -SearchScope Subtree -Server $domain)
                 #validate the computers in the Tier 0 OU are members of the tier 0 computers group
                 Write-Log -Message "Found $($T0computers.Count) Tier 0 computers in $domain" -Severity Debug
                 Foreach ($T0Computer in $T0computers){
@@ -191,9 +191,20 @@ Foreach ($OU in $aryTier0Computer){
                     try {
                         Grant-ADAuthenticationPolicySiloAccess -Identity $KerberosPolicyName -Account $T0Computer.DistinguishedName -Server $domain -ErrorAction SilentlyContinue | Out-Null
                     } catch { }
+                    # Assign Authentication Policy to the computer object (Required for ADAC Accounts tab visibility)
+                    try {
+                        $targetPolicyDN = (Get-ADAuthenticationPolicy -Identity $KerberosPolicyName -Server $domain).DistinguishedName
+                        if ($T0Computer.'msDS-AssignedAuthNPolicy' -ne $targetPolicyDN) {
+                            Set-ADComputer $T0Computer -AuthenticationPolicy $KerberosPolicyName -Server $domain
+                            Write-Log "Assigned Kerberos AuthN Policy '$KerberosPolicyName' to $($T0Computer.Name)" -Severity Information
+                        }
+                    } catch {
+                        Write-Log "Could not assign AuthN Policy to $($T0Computer.Name): $($_.Exception.Message)" -Severity Warning
+                    }
                     # Assign Authentication Policy Silo to the computer object
                     try {
-                        if ($T0Computer.'msDS-AssignedAuthNPolicySilo' -ne (Get-ADAuthenticationPolicySilo -Identity $KerberosPolicyName -Server $domain).DistinguishedName) {
+                        $targetSiloDN = (Get-ADAuthenticationPolicySilo -Identity $KerberosPolicyName -Server $domain).DistinguishedName
+                        if ($T0Computer.'msDS-AssignedAuthNPolicySilo' -ne $targetSiloDN) {
                             Set-ADAccountAuthenticationPolicySilo -Identity $T0Computer.DistinguishedName -AuthenticationPolicySilo $KerberosPolicyName -Server $domain
                             Write-Log "Assigned AuthSilo '$KerberosPolicyName' to $($T0Computer.Name)" -Severity Information
                         }
