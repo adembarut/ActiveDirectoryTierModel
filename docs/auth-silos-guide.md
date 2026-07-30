@@ -1,12 +1,12 @@
 # 🛡️ Kerberos Authentication Policy Silos Architecture & Administration Guide
 
-This guide provides a comprehensive technical overview of the **Kerberos Authentication Policy Silos** implemented in the Active Directory Tier Model framework, explaining its underlying architecture, security mechanisms, exclusion controls, and day-to-day administrative procedures.
+This guide provides a comprehensive technical overview of the **Kerberos Authentication Policy Silos** implemented in the Active Directory Tier Model framework, explaining its underlying architecture, security mechanisms, exclusion controls, dual-attribute policy assignments, and day-to-day administrative procedures.
 
 ---
 
 ## 🏛️ Architecture Overview & How It Works
 
-Kerberos Authentication Policy Silos provide **protocol-level boundary enforcement** (Zero Trust) for privileged Active Directory accounts. Even if a Tier 0 or Tier 1 administrator's password is breached or typed on an untrusted device, Active Directory Domain Controllers (KDCs) will reject Kerberos bilet requests (TGT) unless authentication originates from a verified, authorized tier endpoint.
+Kerberos Authentication Policy Silos provide **protocol-level boundary enforcement** (Zero Trust) for privileged Active Directory accounts. Even if a Tier 0 or Tier 1 administrator's password is breached or typed on an untrusted device, Active Directory Domain Controllers (KDCs) will reject Kerberos ticket requests (TGT) unless authentication originates from a verified, authorized tier endpoint.
 
 ```
 +-----------------------------------------------------------------------------------+
@@ -34,7 +34,7 @@ Kerberos Authentication Policy Silos provide **protocol-level boundary enforceme
 ## 🔑 Key Architectural Components
 
 ### 1. Kerberos TGT Lifetime Restriction (240 Minutes / 4 Hours)
-* Standard Kerberos bilet (TGT) validity in Active Directory is 10 hours.
+* Standard Kerberos ticket (TGT) validity in Active Directory is 10 hours.
 * AuthSilo reduces TGT lifetime for Tier 0 and Tier 1 accounts to **240 minutes (4 hours)**.
 * This drastically shortens the window of opportunity for Pass-the-Ticket (PtT) and Golden Ticket attacks.
 
@@ -48,7 +48,13 @@ Authentication Policy SDDL rules enforce device binding:
   * `Tier 1 PAW Devices` (`SEC2TRUST\Tier1PAWDevices`)
   * `Tier 1 Member Servers` (`SEC2TRUST\Tier1MemberServers`)
 
-### 3. Safe Operating Modes: Audit Mode vs. Enforce Mode
+### 3. Dual-Attribute Policy Assignment (ADAC Accounts Tab Visibility)
+To ensure both User and Computer objects render cleanly inside the **Accounts** and **Permitted Accounts** tabs of Active Directory Administrative Center (ADAC):
+* **`msDS-AssignedAuthNPolicySilo`**: Links the object to the Silo container.
+* **`msDS-AssignedAuthNPolicy`**: Links the object to the Kerberos Authentication Policy.
+* **`msDS-AuthNPolicySiloMembers`**: Added via `Grant-ADAuthenticationPolicySiloAccess`.
+
+### 4. Safe Operating Modes: Audit Mode vs. Enforce Mode
 * **Audit Mode (`Enforce = $false`):** Default deployment state. Domain Controllers evaluate AuthSilo policies and write Event Log entries (**Event ID 4818**) when unauthorized devices attempt authentication, without blocking real-time user logins.
 * **Enforce Mode (`Enforce = $true`):** Active enforcement state. Domain Controllers actively reject TGT requests originating from non-authorized endpoints.
 
@@ -62,12 +68,16 @@ To prevent administrative lockout during emergencies or PKI/ADFS outages, a mult
 * **`BreakGlassAdmin`** is explicitly excluded by default from AuthSilo assignment (`msDS-AssignedAuthNPolicy`) and the `Protected Users` group.
 * **Why?** If PKI or SmartCard authentication services fail, administrators can retrieve the `BreakGlassAdmin` password from physical vault storage and log into Domain Controllers using NTLM/password fallback.
 
-### 2. Group-Based Exclusion Management
+### 2. Group-Based Exclusion Management & Automatic Lifecycle
 Dedicated security groups are provisioned in Active Directory to allow dynamic exclusion without modifying code:
 * **`Tier 0 AuthSilo Excluded Accounts`** (`OU=Admins,OU=Tier 0 Groups...`)
+* **`Tier 0 AuthSilo Excluded Devices`** (`OU=Admins,OU=Tier 0 Groups...`)
 * **`Tier 1 AuthSilo Excluded Accounts`** (`OU=Admins,OU=Tier 1 Groups...`)
+* **`Tier 1 AuthSilo Excluded Devices`** (`OU=Admins,OU=Tier 1 Groups...`)
 
-Accounts added to these groups are automatically bypassed during AuthSilo maintenance script runs.
+#### Automatic Revocation & Re-Enforcement Lifecycle:
+* **Exclusion Addition:** When an account or device is added to an exclusion group, the next maintenance script run automatically detects membership, **revokes Silo access (`Revoke-ADAuthenticationPolicySiloAccess`)**, and **clears policy links (`Set-ADAccountAuthenticationPolicySilo -Remove...`)**, immediately releasing the object from Silo TGT constraints.
+* **Exclusion Removal:** When an object is removed from an exclusion group, the script automatically **re-enforces Silo membership, assigns policies, and restores full Tier protection.**
 
 ---
 
@@ -81,23 +91,24 @@ When a new Tier 0 administrator is hired or provisioned:
 2. Add the user to the `Tier 0 Admins` security group.
 3. Run the Tier 0 maintenance script (or wait for the 10-minute Task Scheduler job):
    ```powershell
-   .\optional\TierModel-AuthSilos\Update-Tier0AuthSiloUsers.ps1 -ParentOU "TierModel"
+   & "C:\Windows\SYSVOL\domain\scripts\TierModelAuthSilos\Update-Tier0AuthSiloUsers.ps1" -ParentOU "TierModel"
    ```
 4. **Verification:** Confirm the user has `msDS-AssignedAuthNPolicy` set to `*- Tier 0 Authentication Silo`.
 
 ---
 
-### Scenario 2: Excluding a Special Account from AuthSilo Restrictions
+### Scenario 2: Excluding a User or Computer Object from AuthSilo Restrictions
 
-If a service account or monitoring user within Tier 0 must be exempted from AuthSilo device restrictions:
+If a user account or server within Tier 0 must be exempted from AuthSilo device restrictions during emergency maintenance:
 
 1. Open **Active Directory Users and Computers (`dsa.msc`)** or **ADAC (`dsac.exe`)**.
-2. Add the target user account to the **`Tier 0 AuthSilo Excluded Accounts`** security group.
-3. Run the Tier 0 maintenance script:
+2. Add the target user account to **`Tier 0 AuthSilo Excluded Accounts`** or target computer to **`Tier 0 AuthSilo Excluded Devices`**.
+3. Run the maintenance script (or wait for Task Scheduler):
    ```powershell
-   .\optional\TierModel-AuthSilos\Update-Tier0AuthSiloUsers.ps1 -ParentOU "TierModel"
+   & "C:\Windows\SYSVOL\domain\scripts\TierModelAuthSilos\Update-Tier0AuthSiloUsers.ps1" -ParentOU "TierModel"
+   & "C:\Windows\SYSVOL\domain\scripts\TierModelAuthSilos\Update-Tier0MemberServers.ps1" -ParentOU "TierModel"
    ```
-4. **Result:** The script logs: `Skipping excluded user CN=... from AuthSilo & Protected Users enforcement`.
+4. **Result:** The script logs: `Skipping excluded user/computer CN=... from AuthSilo enforcement` and automatically revokes Silo policy links.
 
 ---
 
@@ -126,20 +137,14 @@ Set-ADAuthenticationPolicySilo -Identity "*- Tier 1 Authentication Silo" -Enforc
 
 ---
 
-### Scenario 5: Automated Maintenance via Task Scheduler
+### Scenario 5: Automated Maintenance via SYSVOL & Task Scheduler
 
-To maintain continuous compliance as computers and users are added or removed:
+Maintenance scripts are hosted directly in **SYSVOL** (`C:\Windows\SYSVOL\domain\scripts\TierModelAuthSilos\`) to ensure high-availability execution across all Domain Controllers:
 
 ```powershell
-# Register Tier 0 Automated Maintenance Task (Runs every 10 mins)
-$Action0 = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-ExecutionPolicy Bypass -NoProfile -NonInteractive -File C:\ActiveDirectoryTierModel-main\optional\TierModel-AuthSilos\Update-Tier0AuthSiloUsers.ps1 -ParentOU TierModel"
-$Trigger0 = New-ScheduledTaskTrigger -Daily -At "00:00" -RepetitionInterval (New-TimeSpan -Minutes 10)
-Register-ScheduledTask -TaskName "Tier 0 Auth Silo" -Action $Action0 -Trigger $Trigger0 -User "NT AUTHORITY\SYSTEM" -RunLevel Highest
-
-# Register Tier 1 Automated Maintenance Task (Runs every 10 mins)
-$Action1 = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-ExecutionPolicy Bypass -NoProfile -NonInteractive -File C:\ActiveDirectoryTierModel-main\optional\TierModel-AuthSilos\Update-Tier1AuthSiloUsers.ps1 -ParentOU TierModel"
-$Trigger1 = New-ScheduledTaskTrigger -Daily -At "00:00" -RepetitionInterval (New-TimeSpan -Minutes 10)
-Register-ScheduledTask -TaskName "Tier 1 Auth Silo" -Action $Action1 -Trigger $Trigger1 -User "NT AUTHORITY\SYSTEM" -RunLevel Highest
+# Execute non-interactively via GPO Task Scheduler or direct PowerShell Task
+powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File C:\Windows\SYSVOL\domain\scripts\TierModelAuthSilos\Update-Tier0AuthSiloUsers.ps1 -ParentOU TierModel
+powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File C:\Windows\SYSVOL\domain\scripts\TierModelAuthSilos\Update-Tier0MemberServers.ps1 -ParentOU TierModel
 ```
 
 ---
@@ -148,9 +153,9 @@ Register-ScheduledTask -TaskName "Tier 1 Auth Silo" -Action $Action1 -Trigger $T
 
 | Task | Recommended Command / Action | Frequency |
 | :--- | :--- | :--- |
-| **Deploy AuthSilos** | `.\optional\TierModel-AuthSilos\Deploy-TierModelAuthSilo.ps1 -PreferredDC AD-DC-PRD-01.sec2trust.com` | One-time post-deployment |
-| **Sync Tier 0 Users** | `.\optional\TierModel-AuthSilos\Update-Tier0AuthSiloUsers.ps1 -ParentOU TierModel` | Automated / As needed |
-| **Sync Tier 1 Users** | `.\optional\TierModel-AuthSilos\Update-Tier1AuthSiloUsers.ps1 -ParentOU TierModel` | Automated / As needed |
-| **Sync Tier 0 Computers**| `.\optional\TierModel-AuthSilos\Update-Tier0MemberServers.ps1 -ParentOU TierModel` | Automated / As needed |
-| **Sync Tier 1 Computers**| `.\optional\TierModel-AuthSilos\Update-Tier1MemberServers.ps1 -ParentOU TierModel` | Automated / As needed |
-| **Audit Exclusions** | Check `msDS-AssignedAuthNPolicy` attribute on `BreakGlassAdmin` | Quarterly |
+| **Deploy AuthSilos** | `.\Deploy-TierModel.ps1 -IncludeAuthSilo -AuthSiloTaskMode GPO -ParentOU TierModel` | One-time post-deployment |
+| **Sync Tier 0 Users** | `& C:\Windows\SYSVOL\domain\scripts\TierModelAuthSilos\Update-Tier0AuthSiloUsers.ps1 -ParentOU TierModel` | Automated (10 mins) |
+| **Sync Tier 0 Computers**| `& C:\Windows\SYSVOL\domain\scripts\TierModelAuthSilos\Update-Tier0MemberServers.ps1 -ParentOU TierModel` | Automated (10 mins) |
+| **Sync Tier 1 Users** | `& C:\Windows\SYSVOL\domain\scripts\TierModelAuthSilos\Update-Tier1AuthSiloUsers.ps1 -ParentOU TierModel` | Automated (10 mins) |
+| **Sync Tier 1 Computers**| `& C:\Windows\SYSVOL\domain\scripts\TierModelAuthSilos\Update-Tier1MemberServers.ps1 -ParentOU TierModel` | Automated (10 mins) |
+| **Audit Exclusions** | Check `msDS-AssignedAuthNPolicy` attribute on `BreakGlassAdmin` and Excluded Groups | Quarterly |

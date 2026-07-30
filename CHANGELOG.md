@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-07-30
+
+### Added & Enhanced
+
+#### Non-Interactive Task Scheduler Execution & Reliable SYSVOL Script Deployment
+- **Non-Interactive Confirmation Bypass**: Added `-Confirm:$false` to all AD modification cmdlets (`Set-ADAccountAuthenticationPolicySilo`, `Set-ADComputer`, `Set-ADUser`) in maintenance scripts to ensure non-interactive background execution via Task Scheduler without prompting or hanging.
+- **Write-Log Parameter Safety**: Added `[AllowEmptyString()]` to `Write-Log` `$Message` parameter and handled empty `$MyInvocation.Line` when scripts are executed via `powershell.exe -file` in background tasks.
+- **Direct Physical SYSVOL Execution**: Updated GPO `ScheduledTasks.xml` and `Deploy-TierModel.ps1` to execute maintenance scripts directly from `%SystemRoot%\SYSVOL\sysvol\<domain>\scripts\TierModelAuthSilos\` to eliminate environment variable expansion issues (`%USERDNSDOMAIN%`) under `NT AUTHORITY\SYSTEM` context.
+
+#### ADAC Accounts Tab Visibility & Computer Object Silo Binding
+- **Dual-Attribute Policy Assignment**: Implemented `Set-ADComputer -AuthenticationPolicy` alongside `Set-ADAccountAuthenticationPolicySilo` in `Update-Tier0MemberServers.ps1`, `Update-Tier0PAWDevices.ps1`, `Update-Tier1MemberServers.ps1`, and `Update-Tier1PAWDevices.ps1`.
+- **ADAC Visibility**: Guarantees that Computer objects render cleanly inside both the **Accounts** tab of Authentication Policies and **Permitted Accounts** tab of Authentication Policy Silos in Active Directory Administrative Center (ADAC).
+
+#### Dedicated Device Exclusion Groups & Automated Revocation Lifecycle
+- **Dedicated Device Exclusion Groups**: Created `Tier 0 AuthSilo Excluded Devices` (`Tier0AuthSiloExcludedDevices`) and `Tier 1 AuthSilo Excluded Devices` (`Tier1AuthSiloExcludedDevices`) security groups in `config/tiermodel-groups.json`.
+- **Automated Revocation & Re-Enforcement Lifecycle**: Updated maintenance scripts to automatically revoke Silo access (`Revoke-ADAuthenticationPolicySiloAccess`) and clear policy assignments (`Set-ADAccountAuthenticationPolicySilo -Remove...`) when an object is added to an Exclusion Group. When removed from the Exclusion Group, the object is automatically re-enforced into the Silo on the next run.
+
 ## [1.3.0] - 2026-07-29
 
 ### Added & Enhanced
