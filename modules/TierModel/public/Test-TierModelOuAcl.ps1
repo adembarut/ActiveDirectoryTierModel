@@ -171,22 +171,32 @@ function Test-TierModelOuAcl {
                     # Step 3: Get current ACL on the OU
                     $currentAcl = $null
                     try {
+                        if (-not (Get-PSDrive -Name AD -ErrorAction SilentlyContinue)) {
+                            New-PSDrive -Name AD -PSProvider ActiveDirectory -Root '' -Server $DomainController -Scope Global -ErrorAction SilentlyContinue | Out-Null
+                        }
                         $currentAcl = Get-Acl -Path "AD:\$targetOUPath" -ErrorAction Stop
                         Write-Host "    ✅ OU ACL readable" -ForegroundColor Green
                     } catch {
-                        Write-Host "    ❌ Cannot read OU ACL" -ForegroundColor Red
-                        
-                        $findings += [PSCustomObject]@{
-                            Type = 'Error'
-                            ResourceType = 'ACL'
-                            Identifier = "$identityReference → $($acl.targetOUPath)"
-                            Property = 'ACLAccess'
-                            ExpectedValue = 'Readable'
-                            ActualValue = 'Access Denied'
-                            Details = "Cannot read ACL for OU '$targetOUPath': $($_.Exception.Message)"
+                        try {
+                            Remove-PSDrive -Name AD -ErrorAction SilentlyContinue
+                            New-PSDrive -Name AD -PSProvider ActiveDirectory -Root '' -Server $DomainController -Scope Global -ErrorAction SilentlyContinue | Out-Null
+                            $currentAcl = Get-Acl -Path "AD:\$targetOUPath" -ErrorAction Stop
+                            Write-Host "    ✅ OU ACL readable" -ForegroundColor Green
+                        } catch {
+                            Write-Host "    ❌ Cannot read OU ACL" -ForegroundColor Red
+                            
+                            $findings += [PSCustomObject]@{
+                                Type = 'Error'
+                                ResourceType = 'ACL'
+                                Identifier = "$identityReference → $($acl.targetOUPath)"
+                                Property = 'ACLAccess'
+                                ExpectedValue = 'Readable'
+                                ActualValue = 'Access Denied'
+                                Details = "Cannot read ACL for OU '$targetOUPath': $($_.Exception.Message)"
+                            }
+                            $errorCount++
+                            continue
                         }
-                        $errorCount++
-                        continue
                     }
                     
                     # Step 4: Parse expected values from configuration

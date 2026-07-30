@@ -131,9 +131,22 @@ function Test-TierModelOu {
                         CorrelationId = $CorrelationId
                     } | Out-Null
                     
-                    # Get the OU object for further checks
-                    $adOU = Get-ADOrganizationalUnit -Identity $ouDistinguishedName -Server $DomainController -Properties ProtectedFromAccidentalDeletion
+                    # Get the OU object for further checks (including nTSecurityDescriptor for reliable inheritance reading)
+                    $adOU = Get-ADOrganizationalUnit -Identity $ouDistinguishedName -Server $DomainController -Properties ProtectedFromAccidentalDeletion, nTSecurityDescriptor
                     
+                    # Helper script block to safely read security inheritance
+                    $getIsInheritanceProtected = {
+                        if ($adOU -and $adOU.PSObject.Properties['nTSecurityDescriptor'] -and $adOU.nTSecurityDescriptor) {
+                            return $adOU.nTSecurityDescriptor.AreAccessRulesProtected
+                        }
+                        try {
+                            $acl = Get-Acl -Path "AD:\$ouDistinguishedName" -ErrorAction Stop
+                            return $acl.AreAccessRulesProtected
+                        } catch {
+                            throw $_
+                        }
+                    }
+
                     # Check accidental deletion protection if configured
                     if ($ou.PSObject.Properties.Name -contains 'protectFromAccidentalDeletion' -and $ou.protectFromAccidentalDeletion -eq $true) {
                         if ($adOU.ProtectedFromAccidentalDeletion -eq $true) {
@@ -223,8 +236,8 @@ function Test-TierModelOu {
                     # Check security inheritance disabling if configured
                     if ($ou.PSObject.Properties.Name -contains 'disableInheritance' -and $ou.disableInheritance -eq $true) {
                         try {
-                            $acl = Get-Acl -Path "AD:\$ouDistinguishedName"
-                            if ($acl.AreAccessRulesProtected -eq $true) {
+                            $isProtected = &$getIsInheritanceProtected
+                            if ($isProtected -eq $true) {
                                 Write-Host "  ✅ Security Inheritance: Disabled" -ForegroundColor Green
                             } else {
                                 Write-Host "  ❌ Security Inheritance: Enabled (Expected: Disabled)" -ForegroundColor Red
@@ -257,8 +270,8 @@ function Test-TierModelOu {
                         }
                     } elseif ($ou.PSObject.Properties.Name -contains 'disableInheritance' -and $ou.disableInheritance -eq $false) {
                         try {
-                            $acl = Get-Acl -Path "AD:\$ouDistinguishedName"
-                            if ($acl.AreAccessRulesProtected -eq $false) {
+                            $isProtected = &$getIsInheritanceProtected
+                            if ($isProtected -eq $false) {
                                 Write-Host "  ✅ Security Inheritance: Enabled" -ForegroundColor Green
                             } else {
                                 Write-Host "  ❌ Security Inheritance: Disabled (Expected: Enabled)" -ForegroundColor Red
