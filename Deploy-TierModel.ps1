@@ -1969,10 +1969,10 @@ if ($FullDeployment) {
                         $paw0Path = Join-Path $execDir "Update-Tier0PAWDevices.ps1"
                         $ms1Path = Join-Path $execDir "Update-Tier1MemberServers.ps1"
                         $paw1Path = Join-Path $execDir "Update-Tier1PAWDevices.ps1"
-                        if (Test-Path $ms0Path) { & $ms0Path -ParentOU $ParentOU }
-                        if (Test-Path $paw0Path) { & $paw0Path -ParentOU $ParentOU }
-                        if (Test-Path $ms1Path) { & $ms1Path -ParentOU $ParentOU }
-                        if (Test-Path $paw1Path) { & $paw1Path -ParentOU $ParentOU }
+                        if (Test-Path $ms0Path) { & $ms0Path -ParentOU $ParentOU -ExcludeGroupName "Tier 0 AuthSilo Excluded Devices,Tier 0 AuthSilo Excluded Accounts" }
+                        if (Test-Path $paw0Path) { & $paw0Path -ParentOU $ParentOU -ExcludeGroupName "Tier 0 AuthSilo Excluded Devices,Tier 0 AuthSilo Excluded Accounts" }
+                        if (Test-Path $ms1Path) { & $ms1Path -ParentOU $ParentOU -ExcludeGroupName "Tier 1 AuthSilo Excluded Devices,Tier 1 AuthSilo Excluded Accounts" }
+                        if (Test-Path $paw1Path) { & $paw1Path -ParentOU $ParentOU -ExcludeGroupName "Tier 1 AuthSilo Excluded Devices,Tier 1 AuthSilo Excluded Accounts" }
 
                         # 5. GPO vs LocalTask Mode
                         if ($AuthSiloTaskMode -in @('GPO', 'Both')) {
@@ -2701,10 +2701,10 @@ if ($activeScopeCount -eq 0 -and $activeIncludeCount -gt 0) {
                 $paw0Path = Join-Path $execDir "Update-Tier0PAWDevices.ps1"
                 $ms1Path = Join-Path $execDir "Update-Tier1MemberServers.ps1"
                 $paw1Path = Join-Path $execDir "Update-Tier1PAWDevices.ps1"
-                if (Test-Path $ms0Path) { & $ms0Path -ParentOU $ParentOU }
-                if (Test-Path $paw0Path) { & $paw0Path -ParentOU $ParentOU }
-                if (Test-Path $ms1Path) { & $ms1Path -ParentOU $ParentOU }
-                if (Test-Path $paw1Path) { & $paw1Path -ParentOU $ParentOU }
+                if (Test-Path $ms0Path) { & $ms0Path -ParentOU $ParentOU -ExcludeGroupName "Tier 0 AuthSilo Excluded Devices,Tier 0 AuthSilo Excluded Accounts" }
+                if (Test-Path $paw0Path) { & $paw0Path -ParentOU $ParentOU -ExcludeGroupName "Tier 0 AuthSilo Excluded Devices,Tier 0 AuthSilo Excluded Accounts" }
+                if (Test-Path $ms1Path) { & $ms1Path -ParentOU $ParentOU -ExcludeGroupName "Tier 1 AuthSilo Excluded Devices,Tier 1 AuthSilo Excluded Accounts" }
+                if (Test-Path $paw1Path) { & $paw1Path -ParentOU $ParentOU -ExcludeGroupName "Tier 1 AuthSilo Excluded Devices,Tier 1 AuthSilo Excluded Accounts" }
 
                 # 5. GPO vs LocalTask Mode
                 if ($AuthSiloTaskMode -in @('GPO', 'Both')) {

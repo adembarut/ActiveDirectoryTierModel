@@ -33,6 +33,16 @@
       "info": "=======================================================\r\nTIER MODEL IDENTITY DOCUMENTATION\r\n=======================================================\r\nSCOPE      : Tier 0 (Control Plane)\r\nROLE       : AuthSilo Excluded Accounts Group\r\nPRIVILEGES : Excludes members from Kerberos AuthSilo\r\n             TGT restrictions and Protected Users\r\n             group enforcement for DR access.\r\n-------------------------------------------------------\r\nCHANGE & AUDIT TRACKING:\r\n- Version  : TierModel v2.0 (Microsoft EAM)\r\n- Managed  : AD Security Architecture Team\r\n- History  : Standard TierModel Deployment\r\n======================================================="
     },
     {
+      "name": "Tier 0 AuthSilo Excluded Devices",
+      "samaccountname": "Tier0AuthSiloExcludedDevices",
+      "description": "Computers and devices in this group are excluded from Tier 0 Kerberos AuthSilo enforcement",
+      "groupscope": "Global",
+      "groupcategory": "Security",
+      "path": "OU=Admins,OU=Tier 0 Groups,OU=Tier 0,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
+      "comment": "Exclusion group for special Tier 0 computer objects bypassing AuthSilo restrictions",
+      "info": "=======================================================\r\nTIER MODEL IDENTITY DOCUMENTATION\r\n=======================================================\r\nSCOPE      : Tier 0 (Control Plane)\r\nROLE       : AuthSilo Excluded Devices Group\r\nPRIVILEGES : Excludes members from Kerberos AuthSilo\r\n             restrictions for Tier 0 member servers\r\n             and PAW devices.\r\n-------------------------------------------------------\r\nCHANGE & AUDIT TRACKING:\r\n- Version  : TierModel v2.0 (Microsoft EAM)\r\n- Managed  : AD Security Architecture Team\r\n- History  : Standard TierModel Deployment\r\n======================================================="
+    },
+    {
       "name": "Tier 0 Admins",
       "samaccountname": "Tier0Admins",
       "description": "Members of this group administer Tier 0, 1, and 2 resources",
@@ -121,6 +131,16 @@
       "path": "OU=Admins,OU=Tier 1 Groups,OU=Tier 1,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
       "comment": "Exclusion group for special Tier 1 accounts bypassing AuthSilo restrictions",
       "info": "=======================================================\r\nTIER MODEL IDENTITY DOCUMENTATION\r\n=======================================================\r\nSCOPE      : Tier 1 (Management Plane)\r\nROLE       : AuthSilo Excluded Accounts Group\r\nPRIVILEGES : Excludes members from Tier 1 AuthSilo\r\n             TGT restrictions and Protected Users\r\n             group enforcement.\r\n-------------------------------------------------------\r\nCHANGE & AUDIT TRACKING:\r\n- Version  : TierModel v2.0 (Microsoft EAM)\r\n- Managed  : Infrastructure Security Team\r\n- History  : Standard TierModel Deployment\r\n======================================================="
+    },
+    {
+      "name": "Tier 1 AuthSilo Excluded Devices",
+      "samaccountname": "Tier1AuthSiloExcludedDevices",
+      "description": "Computers and devices in this group are excluded from Tier 1 Kerberos AuthSilo enforcement",
+      "groupscope": "Global",
+      "groupcategory": "Security",
+      "path": "OU=Admins,OU=Tier 1 Groups,OU=Tier 1,OU=Tier Model Administration,OU=_TierModel,{{DOMAIN_DN}}",
+      "comment": "Exclusion group for special Tier 1 computer objects bypassing AuthSilo restrictions",
+      "info": "=======================================================\r\nTIER MODEL IDENTITY DOCUMENTATION\r\n=======================================================\r\nSCOPE      : Tier 1 (Management Plane)\r\nROLE       : AuthSilo Excluded Devices Group\r\nPRIVILEGES : Excludes members from Kerberos AuthSilo\r\n             restrictions for Tier 1 member servers\r\n             and PAW devices.\r\n-------------------------------------------------------\r\nCHANGE & AUDIT TRACKING:\r\n- Version  : TierModel v2.0 (Microsoft EAM)\r\n- Managed  : Infrastructure Security Team\r\n- History  : Standard TierModel Deployment\r\n======================================================="
     },
     {
       "name": "Tier 1 Member Servers",

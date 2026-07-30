@@ -15,6 +15,9 @@ Param (
     [Parameter(Mandatory=$false)]
     [string]$ExcludeComputer = "",
 
+    [Parameter(Mandatory=$false)]
+    [string]$ExcludeGroupName = "Tier 0 AuthSilo Excluded Devices,Tier 0 AuthSilo Excluded Accounts",
+
     [Parameter (Mandatory=$false)]
     [bool]$MultiDomainForest = $false
 )
@@ -153,15 +156,22 @@ Foreach ($OU in $aryTier0Computer){
                 Write-Log "Missing the Tier 0 computer OU $OU,$((Get-ADDomain -Server $domain).DistinguishedName)" -Severity Warning
                 Write-EventLog -LogName "Application" -source "Application" -EventId 0 -EntryType Error -Message "Missing the Tier 0 computer OU $OU,$((Get-ADDomain -Server $domain).DistinguishedName)"
             } else{
-                $T0computers = @(Get-ADComputer -SearchBase "$OU,$((Get-ADDomain -Server $domain).DistinguishedName)" -Filter * -Properties msDS-AssignedAuthNPolicySilo -SearchScope Subtree -Server $domain)
+                $T0computers = @(Get-ADComputer -SearchBase "$OU,$((Get-ADDomain -Server $domain).DistinguishedName)" -Filter * -Properties msDS-AssignedAuthNPolicySilo,MemberOf -SearchScope Subtree -Server $domain)
                 #validate the computers in the Tier 0 OU are members of the tier 0 computers group
                 Write-Log -Message "Found $($T0computers.Count) Tier 0 computers in $domain" -Severity Debug
                 Foreach ($T0Computer in $T0computers){
-                    # Check if computer is explicitly excluded
+                    # Check if computer is explicitly excluded by name or group membership
                     $isExcluded = $false
                     if ($ExcludeComputer) {
                         foreach ($exName in ($ExcludeComputer -split ',')) {
-                            if ($exName -and ($T0Computer.SamAccountName -ieq $exName.Trim() -or $T0Computer.Name -ieq $exName.Trim())) {
+                            if ($exName -and ($T0Computer.SamAccountName -ieq $exName.Trim() -or $T0Computer.Name -ieq $exName.Trim() -or $T0Computer.DistinguishedName -ilike "*$($exName.Trim())*")) {
+                                $isExcluded = $true; break
+                            }
+                        }
+                    }
+                    if (-not $isExcluded -and $ExcludeGroupName -and $T0Computer.MemberOf) {
+                        foreach ($exGroup in ($ExcludeGroupName -split ',')) {
+                            if ($exGroup -and ($T0Computer.MemberOf -match "(?i)CN=$($exGroup.Trim()),")) {
                                 $isExcluded = $true; break
                             }
                         }
