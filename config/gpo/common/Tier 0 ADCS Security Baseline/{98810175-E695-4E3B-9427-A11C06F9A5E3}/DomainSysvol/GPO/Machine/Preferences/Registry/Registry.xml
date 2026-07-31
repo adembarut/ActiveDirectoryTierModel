@@ -1,0 +1,24 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<RegistrySettings clsid="{A3CCFC41-DFDB-43a5-8D26-0FE8B954DA51}">
+  <Registry clsid="{9CD4B2F4-923D-47f5-A062-E897DD1DAD50}" name="InterfaceFlags" status="InterfaceFlags" image="2" changed="2026-07-31 10:31:40" uid="{434DF82F-C0BB-4617-8F42-A4FE3A310D5D}" disabled="0">
+    <Properties action="U" displayDecimal="0" default="0" hive="HKEY_LOCAL_MACHINE" key="SYSTEM\CurrentControlSet\Services\CertSvc\Configuration" name="InterfaceFlags" type="REG_DWORD" value="00000001" />
+  </Registry>
+  <Registry clsid="{9CD4B2F4-923D-47f5-A062-E897DD1DAD50}" name="ExtendedProtection" status="ExtendedProtection" image="2" changed="2026-07-31 10:31:41" uid="{0C2E1591-AB1D-45EF-8CD3-DCA413514122}" disabled="0">
+    <Properties action="U" displayDecimal="0" default="0" hive="HKEY_LOCAL_MACHINE" key="SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System\Kerberos\Parameters" name="ExtendedProtection" type="REG_DWORD" value="00000001" />
+  </Registry>
+  <Registry clsid="{9CD4B2F4-923D-47f5-A062-E897DD1DAD50}" name="AuditFilter" status="AuditFilter" image="2" changed="2026-07-31 10:31:41" uid="{B87486D7-032D-4940-8599-0F0C2FD7A8B1}" disabled="0">
+    <Properties action="U" displayDecimal="0" default="0" hive="HKEY_LOCAL_MACHINE" key="SYSTEM\CurrentControlSet\Services\CertSvc\Configuration" name="AuditFilter" type="REG_DWORD" value="0000007F" />
+  </Registry>
+  <Registry clsid="{9CD4B2F4-923D-47f5-A062-E897DD1DAD50}" name="StrongCertificateBindingEnforcement" status="StrongCertificateBindingEnforcement" image="2" changed="2026-07-31 10:31:41" uid="{DB96C11B-3CEA-49B3-939C-1EC0ED8127FB}" disabled="0">
+    <Properties action="U" displayDecimal="0" default="0" hive="HKEY_LOCAL_MACHINE" key="SYSTEM\CurrentControlSet\Services\Kdc" name="StrongCertificateBindingEnforcement" type="REG_DWORD" value="00000002" />
+  </Registry>
+  <Registry clsid="{9CD4B2F4-923D-47f5-A062-E897DD1DAD50}" name="ClockSkewMinutes" status="ClockSkewMinutes" image="2" changed="2026-07-31 10:31:42" uid="{AF0A05FC-2109-4328-BF81-83BDFA99CFB4}" disabled="0">
+    <Properties action="U" displayDecimal="0" default="0" hive="HKEY_LOCAL_MACHINE" key="SYSTEM\CurrentControlSet\Services\CertSvc\Configuration" name="ClockSkewMinutes" type="REG_DWORD" value="0000000A" />
+  </Registry>
+  <Registry clsid="{9CD4B2F4-923D-47f5-A062-E897DD1DAD50}" name="KRAFlags" status="KRAFlags" image="2" changed="2026-07-31 10:31:42" uid="{F42AB0C1-C7F4-4BD8-B7C8-691ABD590E9C}" disabled="0">
+    <Properties action="U" displayDecimal="0" default="0" hive="HKEY_LOCAL_MACHINE" key="SYSTEM\CurrentControlSet\Services\CertSvc\Configuration" name="KRAFlags" type="REG_DWORD" value="00000000" />
+  </Registry>
+  <Registry clsid="{9CD4B2F4-923D-47f5-A062-E897DD1DAD50}" name="UseLogonCredential" status="UseLogonCredential" image="2" changed="2026-07-31 10:31:42" uid="{344EBFF7-E2C4-456B-A5AA-8BD1B87E952B}" disabled="0">
+    <Properties action="U" displayDecimal="0" default="0" hive="HKEY_LOCAL_MACHINE" key="SYSTEM\CurrentControlSet\Services\WDigest" name="UseLogonCredential" type="REG_DWORD" value="00000000" />
+  </Registry>
+</RegistrySettings>
