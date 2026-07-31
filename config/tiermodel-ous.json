@@ -27,6 +27,14 @@
       "comment": "Tier 0: Identity Infrastructure Servers (ADFS, Entra Connect, PKI)"
     },
     {
+      "name": "AD CS Servers",
+      "path": "OU=Identity,OU=Tier 0 Member Servers",
+      "protectFromAccidentalDeletion": true,
+      "disableInheritance": false,
+      "blockGpoInheritance": true,
+      "comment": "Tier 0: Active Directory Certificate Services (AD CS / PKI) Infrastructure Servers"
+    },
+    {
       "name": "Virtualization",
       "path": "OU=Tier 0 Member Servers",
       "protectFromAccidentalDeletion": true,
