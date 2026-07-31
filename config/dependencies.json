@@ -1,5 +1,4 @@
 {
-  "pester": "5.7.1",
   "modules": {
     "ActiveDirectory": "1.0.1.0",
     "GroupPolicy": "1.0"

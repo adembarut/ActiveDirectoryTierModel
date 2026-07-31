@@ -136,19 +136,21 @@ function Test-TierModelPrerequisites {
         }
         
         # Test required modules and versions (dependencies already parsed at start)
-        # Check Pester version
+        # Check Pester version (only enforce if 'pester' requirement is explicitly present in dependencies.json)
         $pesterModule = Get-Module -ListAvailable -Name Pester | Sort-Object Version -Descending | Select-Object -First 1
-        if (-not $pesterModule) {
-            $result.Valid = $false
-            $null = $result.Errors.Add("Pester module is not installed.")
-            $null = $result.Remediation.Add("Install Pester: Install-Module -Name Pester -RequiredVersion $($dependencies.pester) -Force")
-            $null = $result.Remediation.Add("For installation help, see Pester documentation: https://github.com/pester/Pester")
-        }
-        elseif ($pesterModule.Version -ne [version]$dependencies.pester) {
-            $result.Valid = $false
-            $null = $result.Errors.Add("Pester version mismatch. Required: $($dependencies.pester), Found: $($pesterModule.Version)")
-            $null = $result.Remediation.Add("Install correct Pester version: Install-Module -Name Pester -RequiredVersion $($dependencies.pester) -Force")
-            $null = $result.Remediation.Add("For installation help, see Pester documentation: https://github.com/pester/Pester")
+        if ($dependencies.PSObject.Properties['pester'] -and -not [string]::IsNullOrWhiteSpace($dependencies.pester)) {
+            if (-not $pesterModule) {
+                $result.Valid = $false
+                $null = $result.Errors.Add("Pester module is not installed.")
+                $null = $result.Remediation.Add("Install Pester: Install-Module -Name Pester -RequiredVersion $($dependencies.pester) -Force")
+                $null = $result.Remediation.Add("For installation help, see Pester documentation: https://github.com/pester/Pester")
+            }
+            elseif ($pesterModule.Version -ne [version]$dependencies.pester) {
+                $result.Valid = $false
+                $null = $result.Errors.Add("Pester version mismatch. Required: $($dependencies.pester), Found: $($pesterModule.Version)")
+                $null = $result.Remediation.Add("Install correct Pester version: Install-Module -Name Pester -RequiredVersion $($dependencies.pester) -Force")
+                $null = $result.Remediation.Add("For installation help, see Pester documentation: https://github.com/pester/Pester")
+            }
         }
         $result.EnvironmentSnapshot.PesterVersion = if ($pesterModule) { $pesterModule.Version.ToString() } else { 'Not installed' }
         
