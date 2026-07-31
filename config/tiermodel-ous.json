@@ -28,7 +28,7 @@
     },
     {
       "name": "AD CS Servers",
-      "path": "OU=Identity,OU=Tier 0 Member Servers",
+      "path": "OU=Tier 0 Member Servers",
       "protectFromAccidentalDeletion": true,
       "disableInheritance": false,
       "blockGpoInheritance": true,
