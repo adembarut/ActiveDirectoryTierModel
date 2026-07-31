@@ -328,6 +328,16 @@
     "OU=Domain Controllers,OU=_TierModel,{{DOMAIN_DN}}": {
       "ImportOnlyGpo": [
         {
+          "name": "*- Tier 0 DCs Kerberos Armoring",
+          "mode": "createImportAndConfigure",
+          "importPath": "config\\gpo\\domain_controller\\Tier 0 DCs Kerberos Armoring\\{EF1DE2EE-B7C0-4CDF-AACF-F66CCB67B908}",
+          "gpoStatus": "UserSettingsDisabled",
+          "linkOrder": 1,
+          "linkEnabled": false,
+          "comment": "Enforces Kerberos FAST (Flexible Authentication Secure Tunneling) and KDC Armoring for Tier 0 Domain Controllers to prevent AS-REP roasting and ticket cracking",
+          "gpoComment": "======================================================================\r\nTIER MODEL POLICY SPECIFICATION & ADMINISTRATIVE DOCUMENTATION\r\n======================================================================\r\n\r\nPOLICY NAME  : Tier 0 DCs Kerberos Armoring\r\nSCOPE        : Tier 0 (Domain Controllers - Kerberos FAST Armoring)\r\nTARGET OU    : OU=Domain Controllers,OU=_TierModel,DC=domain,DC=com\r\nBASELINE     : CIS Benchmark Section 2.3.11 & DISA STIG V-205920\r\n\r\n----------------------------------------------------------------------\r\n1. PURPOSE & SECURITY OBJECTIVE:\r\nEnforces Kerberos FAST (Flexible Authentication Secure Tunneling) and KDC Armoring to protect authentication tickets against offline cracking, spoofing, and AS-REP roasting attacks.\r\n\r\n2. OU LINKING & PLACEMENT RATIONALE:\r\nLinked to Domain Controllers OU with linkEnabled = false by default to allow staging and controlled Kerberos FAST rollout.\r\n\r\n3. KEY CONFIGURATION SETTINGS & ENFORCEMENTS:\r\n• KDC Armoring: Enable KDC support for claims, compound authentication and Kerberos armoring (KdcCacState = 1)\r\n• Client Armoring: Enable Kerberos client armoring (KerberosCacState = 1)\r\n• Claims Policy: Enforce KDC Request Claims policy (KdcRequestClaims = 1)\r\n\r\n----------------------------------------------------------------------\r\n4. INHERITED POLICIES NOTE:\r\n• OS Security Baselines & Audit settings are inherited from parent OU policies \r\n  ('MSFT Windows Server 2025 - Domain Controller' & 'Advanced Audit Policy').\r\n\r\n----------------------------------------------------------------------\r\n5. CHANGE & AUDIT TRACKING:\r\n- Architecture : Microsoft Enterprise Access Model (EAM / Tiering)\r\n- Standard     : CIS Benchmark Section 2.3.11 & DISA STIG V-205920\r\n- Version      : TierModel v2.0\r\n- Managed By   : AD Security Architecture Team\r\n======================================================================"
+        },
+        {
           "name": "*- Tier 0 DCs Authentication Silo - Computer",
           "mode": "createAndImport",
           "importPath": "config\\gpo\\domain_controller\\Authentication Silo\\{18998048-29DE-4CB8-8D44-F324CFDCD7A0}",
