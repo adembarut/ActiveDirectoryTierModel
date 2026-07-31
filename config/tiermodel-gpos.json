@@ -887,8 +887,7 @@
       ]
     },
     "OU=AD CS Servers,OU=Tier 0 Member Servers,OU=_TierModel,{{DOMAIN_DN}}": {
-      "ImportOnlyGpo": [],
-      "PostConfigureGpo": [
+      "ImportOnlyGpo": [
         {
           "name": "*- Tier 0 ADCS Security Baseline",
           "mode": "create",
@@ -896,99 +895,10 @@
           "linkOrder": 1,
           "linkEnabled": true,
           "comment": "Security Baseline for Tier 0 Active Directory Certificate Services (AD CS) and PKI servers to prevent ESC1-ESC13 certificate template abuse",
-          "userRightsAssignments": [
-            {
-              "right": "SeDenyBatchLogonRight",
-              "principals": {
-                "resolvableGroups": [
-                  "Tier1Admins",
-                  "Tier1Operators",
-                  "Tier2Admins",
-                  "Tier2Operators",
-                  "Guests"
-                ],
-                "forestRootOnly": [],
-                "conditionalGroups": [],
-                "literalStrings": []
-              }
-            },
-            {
-              "right": "SeDenyInteractiveLogonRight",
-              "principals": {
-                "resolvableGroups": [
-                  "Tier1Admins",
-                  "Tier1Operators",
-                  "Tier2Admins",
-                  "Tier2Operators",
-                  "Guests"
-                ],
-                "forestRootOnly": [],
-                "conditionalGroups": [],
-                "literalStrings": []
-              }
-            },
-            {
-              "right": "SeDenyNetworkLogonRight",
-              "principals": {
-                "resolvableGroups": [
-                  "Tier1Admins",
-                  "Tier1Operators",
-                  "Tier2Admins",
-                  "Tier2Operators",
-                  "Guests"
-                ],
-                "forestRootOnly": [],
-                "conditionalGroups": [],
-                "literalStrings": []
-              }
-            },
-            {
-              "right": "SeDenyRemoteInteractiveLogonRight",
-              "principals": {
-                "resolvableGroups": [
-                  "Tier1Admins",
-                  "Tier1Operators",
-                  "Tier2Admins",
-                  "Tier2Operators",
-                  "Guests"
-                ],
-                "forestRootOnly": [],
-                "conditionalGroups": [],
-                "literalStrings": []
-              }
-            },
-            {
-              "right": "SeDenyServiceLogonRight",
-              "principals": {
-                "resolvableGroups": [
-                  "Tier1Admins",
-                  "Tier1Operators",
-                  "Tier2Admins",
-                  "Tier2Operators",
-                  "Guests"
-                ],
-                "forestRootOnly": [],
-                "conditionalGroups": [],
-                "literalStrings": []
-              }
-            }
-          ],
-          "restrictedGroups": {
-            "emptyGroups": [],
-            "membershipGroups": [
-              {
-                "groupSidOrName": "*S-1-5-32-544__Members",
-                "memberGroups": [
-                  "Domain Admins",
-                  "Tier0Admins",
-                  "Tier0ServerOperators"
-                ]
-              }
-            ]
-          },
-          "gpoComment": "======================================================================\r\nTIER MODEL POLICY SPECIFICATION & ADMINISTRATIVE DOCUMENTATION\r\n======================================================================\r\n\r\nPOLICY NAME  : Tier 0 ADCS Security Baseline\r\nSCOPE        : Tier 0 (Control Plane - AD CS & PKI Hardening)\r\nTARGET OU    : OU=AD CS Servers,OU=Tier 0 Member Servers,OU=_TierModel,DC=domain,DC=com\r\nBASELINE     : DISA STIG / NSA-CISA AD CS Hardening / CIS AD Benchmark\r\n\r\n----------------------------------------------------------------------\r\n1. PURPOSE & SECURITY OBJECTIVE:\r\nEnforces security baselines and isolation rules for Active Directory Certificate Services (AD CS / PKI) servers to protect against certificate template abuse (ESC1-ESC13).\r\n\r\n2. OU LINKING & PLACEMENT RATIONALE:\r\nLinked to AD CS Servers OU alongside Identity under Tier 0 Member Servers to ensure all PKI Certificate Authorities inherit Tier 0 control plane isolation.\r\n\r\n3. KEY CONFIGURATION SETTINGS & ENFORCEMENTS:\r\n• RPC Encryption: Enforce IF_ENFORCEENCRYPTEDRPCCONNECTIONS (0x1) on CertSvc\r\n• Audit Filter: Enforce CertSvc AuditFilter = 127 (Full Audit Trail for CA)\r\n• EPA & HTTPS: Require Extended Protection for Authentication on Web Enrollment\r\n• User Rights: Block Tier 1/2 Admins and Users from CA server logons\r\n• SAN Extension: Prevent user-defined Subject Alternative Name (SAN) override.\r\n\r\n----------------------------------------------------------------------\r\n4. CHANGE & AUDIT TRACKING:\r\n- Architecture : Microsoft Enterprise Access Model (EAM / Tiering)\r\n- Standard     : DISA STIG / NSA CISA AD CS Security Guidance\r\n- Version      : TierModel v2.0\r\n- Managed By   : AD Security Architecture Team\r\n======================================================================"
+          "gpoComment": "======================================================================\r\nTIER MODEL POLICY SPECIFICATION & ADMINISTRATIVE DOCUMENTATION\r\n======================================================================\r\n\r\nPOLICY NAME  : Tier 0 ADCS Security Baseline\r\nSCOPE        : Tier 0 (Control Plane - AD CS & PKI Hardening)\r\nTARGET OU    : OU=AD CS Servers,OU=Tier 0 Member Servers,OU=_TierModel,DC=domain,DC=com\r\nBASELINE     : Microsoft Enterprise Access Model (EAM) - AD CS Hardening\r\n\r\n----------------------------------------------------------------------\r\n1. PURPOSE & SECURITY OBJECTIVE:\r\nEnforces security baselines and isolation rules for Active Directory Certificate Services (AD CS / PKI) servers to protect against certificate template abuse (ESC1-ESC13).\r\n\r\n2. OU LINKING & PLACEMENT RATIONALE:\r\nLinked to AD CS Servers OU alongside Identity under Tier 0 Member Servers to ensure all PKI Certificate Authorities inherit Tier 0 control plane isolation.\r\n\r\n3. KEY CONFIGURATION SETTINGS & ENFORCEMENTS:\r\n• Security Options: Require EPA (Extended Protection for Authentication) on AD CS web interfaces\r\n• User Rights: Enforce Tier 0 admin logon restrictions on PKI servers\r\n• RPC/HTTP Security: Restrict NTLM authentication and force Kerberos for AD CS web enrollment.\r\n\r\n----------------------------------------------------------------------\r\n4. CHANGE & AUDIT TRACKING:\r\n- Architecture : Microsoft Enterprise Access Model (EAM / Tiering)\r\n- Standard     : Microsoft Security Compliance Toolkit & CIS AD Benchmark\r\n- Version      : TierModel v2.0\r\n- Managed By   : AD Security Architecture Team\r\n======================================================================"
         }
-      ]
+      ],
+      "PostConfigureGpo": []
     },
     "OU=Tier 1 Member Servers,OU=_TierModel,{{DOMAIN_DN}}": {
       "ImportOnlyGpo": [
