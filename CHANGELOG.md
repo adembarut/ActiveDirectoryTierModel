@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-08-02
+
+### Added & Enhanced
+
+#### AD CS Tier 0 Hardening Baseline GPO (`*- Tier 0 ADCS Security Baseline`)
+- **Dedicated Sub-OU**: Positioned `OU=AD CS Servers` alongside `Identity` under `OU=Tier 0 Member Servers` to enforce Tier 0 control plane isolation for all Active Directory Certificate Services (AD CS / PKI) servers.
+- **ESC1 - ESC13 Mitigation**: Integrated `*- Tier 0 ADCS Security Baseline` GPO into `config/tiermodel-gpos.json`, enforcing RPC Encryption (`IF_ENFORCEENCRYPTEDRPCCONNECTIONS = 0x1`), CertSvc AuditFilter (`127`), CVE-2022-26925 Strong Certificate Binding (`StrongCertificateBindingEnforcement = 2`), and NTLM restrictions to protect against certificate template zafiyetleri (ESC1-ESC13).
+
+#### Kerberos Armoring (FAST) & KDC Claims GPO (`*- Tier 0 DCs Kerberos Armoring`)
+- **Resmi ADMX Standards**: Deployed `*- Tier 0 DCs Kerberos Armoring` GPO configured with native Administrative Templates (ADMX) policy settings (`KdcCacState = 1`, `KerberosCacState = 1`, `KdcRequestClaims = 1`).
+- **AS-REP Roasting & Ticket Protection**: Enforces Flexible Authentication Secure Tunneling (FAST) and KDC Armoring for Tier 0 Domain Controllers to protect Kerberos authentication tickets against offline cracking and credential spoofing.
+- **Link Order Optimization**: Positioned `*- Tier 0 DCs Kerberos Armoring` at `Link Order: 1` under `OU=Domain Controllers` as the highest precedence protocol boundary policy.
+
+#### GPO Link Order Sequence Standardisation
+- **Sequential Link Ordering**: Fixed duplicate `linkOrder` values under `OU=Domain Controllers` in `config/tiermodel-gpos.json`, establishing a clean sequential `linkOrder` hierarchy (1..11) for deterministic Group Policy precedence.
+
 ## [1.4.0] - 2026-07-30
 
 ### Added & Enhanced

@@ -19,21 +19,29 @@ Declarative PowerShell framework to deploy, audit, and maintain an Active Direct
 
 ### 1. 📂 Expanded EAM Workload & OU Hierarchy
 Fully aligned with Microsoft Enterprise Access Model (EAM) workload separation:
-* **Tier 0 Member Servers Sub-OUs:** `Identity`, `Virtualization`, `Management`
+* **Tier 0 Member Servers Sub-OUs:** `Identity`, `AD CS Servers`, `Virtualization`, `Management`
 * **Tier 1 Member Servers Sub-OUs:** `Application`, `Database`, `Collaboration`, `Messaging`
 * **Tier 2 End-User Devices Sub-OUs:** `Desktops`, `Laptops`, `Kiosks`
 * **Tier 2 End-User Accounts Sub-OUs:** `Enabled End-Users Accounts`, `Disabled End-Users Accounts`
 * **Group Containers:** Dedicated `Admins` and `Operators` sub-OUs across Tier 0, Tier 1, and Tier 2.
 
-### 2. 🚨 Disaster Recovery & Emergency Access (`BreakGlassAdmin`)
+### 2. 📜 AD CS (Active Directory Certificate Services) Tier 0 Hardening Baseline
+* Positioned **`OU=AD CS Servers`** alongside `Identity` under `Tier 0 Member Servers` for PKI Certificate Authority isolation.
+* Integrated **`*- Tier 0 ADCS Security Baseline`** GPO enforcing RPC Encryption (`0x1`), CertSvc AuditFilter (`127`), CVE-2022-26925 Strong Binding, and NTLM restrictions to protect against ESC1-ESC13 certificate template abuse.
+
+### 3. 🔑 Kerberos Armoring (FAST) & KDC Claims Baseline
+* Integrated **`*- Tier 0 DCs Kerberos Armoring`** GPO (`KdcCacState = 1`, `KerberosCacState = 1`) configured via native ADMX Administrative Templates.
+* Positioned at **`Link Order: 1`** on `OU=Domain Controllers` to protect authentication tickets against AS-REP Roasting and offline cracking.
+
+### 4. 🚨 Disaster Recovery & Emergency Access (`BreakGlassAdmin`)
 * Integrated **`BreakGlassAdmin`** user account and **`Break Glass Admins`** security group under Tier 0.
 * **Out-of-Band Resilience:** `BreakGlassAdmin` is automatically **excluded** from Kerberos AuthSilo (`msDS-AssignedAuthNPolicy`) and `Protected Users` enforcement, allowing administrators to recover the forest during PKI/ADFS outages using vault passwords.
 
-### 3. 🛡️ Group-Based AuthSilo Exclusion Management
+### 5. 🛡️ Group-Based AuthSilo Exclusion Management
 * Created dedicated security groups: **`Tier 0 AuthSilo Excluded Accounts`** and **`Tier 1 AuthSilo Excluded Accounts`**.
 * Maintenance scripts (`Update-Tier0AuthSiloUsers.ps1`, `Update-Tier1AuthSiloUsers.ps1`) automatically skip members of these groups from TGT 240m restrictions, enabling dynamic exclusion management without code edits.
 
-### 4. 📝 146 GPO GPMC Comment System & Advanced Auditing
+### 6. 📝 146 GPO GPMC Comment System & Advanced Auditing
 * All 146 GPOs feature multi-section administrative documentation (`PURPOSE`, `PLACEMENT RATIONALE`, `KEY SETTINGS`, `⚠️ PLACEHOLDER GPO NOTICE`).
 * Comments are injected directly into the GPMC Details tab via `Set-TierModelGpoComment.ps1`.
 * Enforces PowerShell Script Block Logging (Event ID 4104), Advanced Audit Policy for DCs, AppLocker Audit Mode, and Windows Defender Firewall Audit Mode.
